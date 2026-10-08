@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="50%" stop-color="#0d9488" />
+      <stop offset="100%" stop-color="#14b8a6" />
+    </linearGradient>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#042f2e" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded app icon -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Outer subtle border -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="6" />
+
+  <!-- Inventory Box & Camera Combined Symbol -->
+  <g filter="url(#dropShadow)" transform="translate(64, 60)">
+    <!-- Isometric Inventory Box Base -->
+    <!-- Top Face -->
+    <polygon points="192,40 336,110 192,180 48,110" fill="#f8fafc" opacity="0.95" />
+    <!-- Left Face -->
+    <polygon points="48,110 192,180 192,310 48,240" fill="#cbd5e1" />
+    <!-- Right Face -->
+    <polygon points="192,180 336,110 336,240 192,310" fill="#94a3b8" />
+
+    <!-- Box Seam / Tape Lines -->
+    <polygon points="172,50 212,70 212,170 172,150" fill="#f59e0b" opacity="0.85" />
+    <polygon points="172,150 212,170 212,300 172,280" fill="#d97706" opacity="0.85" />
+
+    <!-- Camera Floating Badge Badge Overlay -->
+    <g transform="translate(190, 160)">
+      <circle cx="90" cy="90" r="82" fill="#0f172a" stroke="#ffffff" stroke-width="8" />
+      
+      <!-- Camera Body in badge -->
+      <path d="M 45 80 Q 45 68 57 68 L 70 68 L 78 54 Q 82 48 90 48 L 102 48 Q 110 48 114 54 L 122 68 L 135 68 Q 147 68 147 80 L 147 122 Q 147 134 135 134 L 57 134 Q 45 134 45 122 Z" fill="#ffffff" />
+      <!-- Camera Lens Outer -->
+      <circle cx="96" cy="101" r="28" fill="#0f172a" />
+      <!-- Camera Lens Inner Gradient -->
+      <circle cx="96" cy="101" r="20" fill="url(#lensGrad)" />
+      <!-- Lens Glare -->
+      <circle cx="102" cy="95" r="7" fill="#ffffff" opacity="0.8" />
+      <!-- Flash small dot -->
+      <circle cx="128" cy="78" r="4.5" fill="#f59e0b" />
+    </g>
+
+    <!-- Barcode lines accent on the left face -->
+    <g fill="#475569" transform="translate(85, 160) skewY(26)">
+      <rect x="0" y="0" width="4" height="40" />
+      <rect x="8" y="0" width="8" height="40" />
+      <rect x="20" y="0" width="4" height="40" />
+      <rect x="28" y="0" width="12" height="40" />
+      <rect x="44" y="0" width="4" height="40" />
+      <rect x="52" y="0" width="8" height="40" />
+    </g>
+  </g>
+</svg>
