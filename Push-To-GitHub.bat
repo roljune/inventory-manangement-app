@@ -1,43 +1,35 @@
 @echo off
-title Push Inventory Management App to GitHub
+title Push Choy Apparel Inventory to GitHub
 cd /d "%~dp0"
+set "PATH=%PATH%;C:\Users\monte\.gemini\antigravity\tools\git\cmd;C:\Users\monte\AppData\Local\Microsoft\WinGet\Packages\GitHub.cli_Microsoft.Winget.Source_8wekyb3d8bbwe\bin"
 
 echo ========================================================
-echo   Push Inventory Management App to GitHub
+echo   Pushing Choy Apparel Inventory System to GitHub
+echo   Account: roljune (monteronarj@gmail.com)
+echo   Repo:    https://github.com/roljune/inventory-manangement-app
 echo ========================================================
 echo.
 
-where git >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [ERROR] Git is not installed or not in PATH.
-    echo Please install Git from https://git-scm.com/
-    pause
-    exit /b 1
-)
+git remote remove origin 2>nul
+git remote add origin https://github.com/roljune/inventory-manangement-app.git
 
-if not exist ".git" (
-    echo Initializing git repository...
-    git init
-    git branch -M main
-)
-
-echo Adding files...
+echo Adding and committing any pending changes...
 git add .
-git commit -m "Initial commit: Inventory Management App with Camera/Product Photos"
+git commit -m "Choy Apparel Inventory & Camera System - Full Release with Light/Dark Mode" 2>nul
 
 echo.
-echo If you have a remote repository URL (e.g. https://github.com/username/inventory-app.git):
-set /p REPO_URL="Enter Git Remote URL (or press Enter to skip): "
+echo Pushing code to origin main...
+git push -u origin main
 
-if not "%REPO_URL%"=="" (
-    git remote remove origin 2>nul
-    git remote add origin %REPO_URL%
-    echo Pushing to main branch...
-    git push -u origin main
-    echo.
-    echo Done! You can enable GitHub Pages in your repo settings (Settings -> Pages -> Deploy from main).
+echo.
+if %errorlevel% equ 0 (
+    echo ========================================================
+    echo [SUCCESS] Successfully pushed to GitHub!
+    echo View repository at: https://github.com/roljune/inventory-manangement-app
+    echo ========================================================
 ) else (
-    echo Git commit created locally.
+    echo [NOTICE] If prompted for credentials, please complete the sign-in.
 )
 
+echo.
 pause
