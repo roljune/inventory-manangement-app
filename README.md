@@ -1,5 +1,8 @@
 # ⚡ CHOY APPAREL — Inventory Management & Product Camera System
 
+> 🌐 **Live Website Link (Share with Friends):**  
+> **[https://roljune.github.io/inventory-manangement-app/](https://roljune.github.io/inventory-manangement-app/)**
+
 A fast, lightweight, and offline-capable **Streetwear Inventory Management Web Application** designed specifically for **Choy Apparel**.
 
 Built with the same serverless approach as the Student Record App—no MySQL, no XAMPP, and no complicated backend setup needed. All data and compressed photos persist locally in your device's **LocalStorage**.
