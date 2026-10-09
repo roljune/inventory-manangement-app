@@ -1,313 +1,416 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0d9488">
-  <meta name="description" content="Offline-capable Inventory Management System with live camera photo capture, SKU tracking, stock alerts, and local persistence.">
+  <meta name="theme-color" content="#0b0c10">
+  <meta name="description" content="Official Choy Apparel Inventory Management & Camera System with LocalStorage persistence and offline PWA support.">
 
   <!-- Apple iOS PWA Support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="StockMaster">
+  <meta name="apple-mobile-web-app-title" content="ChoyApparel">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
   <!-- Favicon & Manifest -->
-  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-  <link rel="alternate icon" type="image/png" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
 
-  <title>Inventory Management &amp; Product Camera System</title>
+  <title>Choy Apparel — Inventory &amp; Camera System</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="theme-dark">
+
+  <!-- Background Texture Layer -->
+  <div class="wallpaper-overlay"></div>
 
   <!-- Offline Status Banner -->
   <div id="offlineBanner" class="offline-banner">
-    ⚡ Working offline. All inventory records and product photos are saved locally on your device.
+    ⚡ Working Offline. All products, photos, and changes are saved locally to your device.
   </div>
 
-  <!-- Header -->
+  <!-- App Header -->
   <header class="app-header">
     <div class="header-container">
+      
+      <!-- Brand & Artwork -->
       <div class="brand-wrapper">
-        <img src="icons/icon.svg" alt="App Logo" class="brand-icon">
+        <img src="assets/choy-apparel-bg.jpg" alt="Choy Apparel Logo" class="brand-icon">
         <div class="brand-text">
-          <h1>StockMaster Inventory</h1>
-          <p>Product Catalog, Camera Photos &amp; Stock Analytics</p>
+          <div class="brand-badge">OFFICIAL SYSTEM</div>
+          <h1>CHOY APPAREL</h1>
+          <p>Inventory, Camera Photos &amp; Stock Analytics</p>
         </div>
       </div>
+
+      <!-- Controls: Theme Toggle & Download App -->
       <div class="header-actions">
-        <button id="installAppBtn" class="btn-install" title="Download &amp; Install on Phone or PC">
-          📲 Download App
+        
+        <!-- Light / Dark Mode Toggle Switch -->
+        <div class="theme-toggle-wrapper" title="Switch Light / Dark Theme">
+          <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Light and Dark Mode">
+            <span class="theme-icon light-icon">☀️</span>
+            <span class="theme-label" id="themeLabelText">Dark Mode</span>
+            <span class="theme-icon dark-icon">🌙</span>
+          </button>
+        </div>
+
+        <!-- Download App PWA Button -->
+        <button id="installAppBtn" class="btn-download-app" title="Download &amp; Install on Phone or PC">
+          <span class="download-icon">📲</span>
+          <span class="download-text">Download App</span>
         </button>
-        <button id="installHelpBtn" class="btn-icon" title="How to install or open on Phone over Wi-Fi">
+
+        <!-- Help / Wi-Fi Guide Button -->
+        <button id="installHelpBtn" class="btn-icon-square" title="How to install or use on Phone over Wi-Fi">
           ℹ️
         </button>
       </div>
+
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- Main App Shell -->
   <main class="main-container">
 
-    <!-- Statistics Overview Grid -->
-    <section class="stats-grid" aria-label="Inventory Statistics Summary">
-      <div class="stat-card">
-        <div class="stat-icon total-prod">📦</div>
-        <div class="stat-details">
-          <span class="stat-label">Total Products</span>
-          <span class="stat-value" id="statTotalProducts">0</span>
+    <!-- Hero Greeting & Quick Stats Bar -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-left">
+          <span class="hero-greeting">Hello, <strong>Choy Apparel</strong></span>
+          <h2 class="hero-title">What would you like to manage today?</h2>
+        </div>
+        <div class="hero-actions">
+          <button type="button" id="heroAddBtn" class="btn btn-pill-primary">
+            ➕ Add New Item
+          </button>
+          <button type="button" id="heroCameraBtn" class="btn btn-pill-secondary">
+            📷 Quick Camera
+          </button>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon total-qty">🔢</div>
-        <div class="stat-details">
-          <span class="stat-label">Total Stock Units</span>
-          <span class="stat-value" id="statTotalUnits">0</span>
+      <!-- Search & Filter Bar (Matching the Reference UI Mockup) -->
+      <div class="search-filter-row">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by product name, SKU (e.g. CA-001), category, shelf...">
+          <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear search" hidden>&times;</button>
         </div>
+
+        <!-- Filter Sliders Button -->
+        <button type="button" id="toggleFiltersPanelBtn" class="filter-sliders-btn" title="Toggle Category &amp; Sorting Filters">
+          <span class="sliders-icon">🎛️</span>
+          <span class="sliders-label">Filter</span>
+        </button>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon total-val">💰</div>
-        <div class="stat-details">
-          <span class="stat-label">Total Inventory Value</span>
-          <span class="stat-value" id="statTotalValue">₱0.00</span>
-        </div>
+      <!-- Category Filter Chips (Pill Bar matching the Mockup: Work, Play, Order, Rest...) -->
+      <div class="category-chips-scroll" id="categoryChipsContainer">
+        <button type="button" class="chip-btn active" data-category="">All Items</button>
+        <button type="button" class="chip-btn" data-category="T-Shirts">T-Shirts</button>
+        <button type="button" class="chip-btn" data-category="Hoodies &amp; Sweaters">Hoodies</button>
+        <button type="button" class="chip-btn" data-category="Caps &amp; Headwear">Caps</button>
+        <button type="button" class="chip-btn" data-category="Pants &amp; Bottoms">Pants</button>
+        <button type="button" class="chip-btn" data-category="Bags &amp; Backpacks">Bags</button>
+        <button type="button" class="chip-btn chip-alert" data-status="ALERT">⚠️ Stock Alerts</button>
       </div>
 
-      <div class="stat-card" id="statAlertsCard" role="button" title="Click to filter low and out-of-stock items">
-        <div class="stat-icon alert-stock">⚠️</div>
-        <div class="stat-details">
-          <span class="stat-label">Stock Alerts</span>
-          <div class="stat-subvalues">
-            <span class="badge-pill warn" id="statLowStockCount">0 Low</span>
-            <span class="badge-pill danger" id="statOutOfStockCount">0 Out</span>
+      <!-- Collapsible Advanced Filter Panel -->
+      <div id="advancedFilterPanel" class="advanced-filter-panel" hidden>
+        <div class="filter-group">
+          <label for="filterCategory">Category:</label>
+          <select id="filterCategory" class="ui-select">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filterStatus">Stock Status:</label>
+          <select id="filterStatus" class="ui-select">
+            <option value="">All Statuses</option>
+            <option value="IN_STOCK">🟢 In Stock</option>
+            <option value="LOW_STOCK">🟡 Low Stock</option>
+            <option value="OUT_OF_STOCK">🔴 Out of Stock</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="sortBySelect">Sort by:</label>
+          <select id="sortBySelect" class="ui-select">
+            <option value="newest">Newest First</option>
+            <option value="name_asc">Name (A → Z)</option>
+            <option value="sku_asc">SKU (A → Z)</option>
+            <option value="price_asc">Price (Low → High)</option>
+            <option value="price_desc">Price (High → Low)</option>
+            <option value="stock_asc">Stock (Low → High)</option>
+            <option value="stock_desc">Stock (High → Low)</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>View Mode:</label>
+          <div class="view-switch-pills">
+            <button type="button" id="viewTableBtn" class="pill-toggle active">📑 Table</button>
+            <button type="button" id="viewCardsBtn" class="pill-toggle">🔲 Cards</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Product Entry / Edit Form Card -->
-    <section class="card" id="productFormCard">
-      <div class="card-header">
-        <div class="card-header-title">
-          <h2 class="card-title" id="formTitle">➕ Add New Product</h2>
-          <span class="card-subtitle">Fill in product details or snap a photo directly with your camera</span>
+    <!-- Metrics Cards Grid (Matching the Reference UI Dashboard) -->
+    <section class="dashboard-grid">
+      
+      <!-- Card 1: Revenue / Inventory Value -->
+      <div class="dash-card metric-card">
+        <div class="dash-card-header">
+          <span class="card-kpi-label">TOTAL INVENTORY VALUE</span>
+          <span class="card-kpi-badge">PHP ₱</span>
         </div>
-        <button type="button" id="formResetBtn" class="btn-text" title="Clear all input fields">Reset Form</button>
+        <div class="card-kpi-value" id="statTotalValue">₱0.00</div>
+        <div class="card-kpi-footer">
+          <span class="kpi-indicator green">● Active Valuation</span>
+          <span class="kpi-subtext" id="statTotalUnitsSub">0 stock units in store</span>
+        </div>
       </div>
 
-      <div class="card-body">
+      <!-- Card 2: Quick Upload / Camera Action Box -->
+      <div class="dash-card camera-action-card" id="quickCameraActionCard">
+        <div class="camera-card-inner">
+          <div class="camera-card-icon">📷</div>
+          <div class="camera-card-text">
+            <strong>Snap Product Photo</strong>
+            <span>Use phone camera or upload from files</span>
+          </div>
+          <button type="button" id="dashCameraBtn" class="btn-dash-upload">
+            📸 Open Camera
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 3: Total Products & SKU Count -->
+      <div class="dash-card metric-card">
+        <div class="dash-card-header">
+          <span class="card-kpi-label">PRODUCT CATALOG</span>
+          <span class="card-kpi-badge">SKUs</span>
+        </div>
+        <div class="card-kpi-value" id="statTotalProducts">0</div>
+        <div class="card-kpi-footer">
+          <span class="kpi-indicator blue">● Categories Active</span>
+          <span class="kpi-subtext" id="statCategoryCountSub">0 categories</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Circular Stock Health Meter -->
+      <div class="dash-card stock-health-card" id="stockHealthCard" role="button" title="Click to filter low and out of stock items">
+        <div class="dash-card-header">
+          <span class="card-kpi-label">STOCK HEALTH</span>
+          <span class="card-kpi-badge warn">Alerts</span>
+        </div>
+        <div class="health-meter-container">
+          <div class="circular-meter">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="meterCirclePath" class="circle-fill" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="20.35" class="meter-percentage" id="meterPercentText">100%</text>
+            </svg>
+          </div>
+          <div class="health-breakdown">
+            <div class="health-row">
+              <span class="status-dot green"></span>
+              <span class="health-label">In Stock:</span>
+              <strong id="healthInStockCount">0</strong>
+            </div>
+            <div class="health-row">
+              <span class="status-dot yellow"></span>
+              <span class="health-label">Low Stock:</span>
+              <strong id="statLowStockCount">0</strong>
+            </div>
+            <div class="health-row">
+              <span class="status-dot red"></span>
+              <span class="health-label">Out of Stock:</span>
+              <strong id="statOutOfStockCount">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Product Entry / Edit Form Section -->
+    <section class="ui-card" id="productFormCard">
+      <div class="ui-card-header">
+        <div class="ui-card-title-group">
+          <h3 class="ui-card-title" id="formTitle">➕ Add Product to Catalog</h3>
+          <span class="ui-card-subtitle">Upload or shoot photo with camera, assign SKU, set price &amp; track stock</span>
+        </div>
+        <button type="button" id="formResetBtn" class="btn-ghost" title="Clear input fields">Reset Form</button>
+      </div>
+
+      <div class="ui-card-body">
         <form id="productForm" autocomplete="off">
           
-          <div class="form-layout-with-photo">
-            <!-- Left: Product Photo & Camera Capture Area -->
-            <div class="photo-upload-section">
-              <label class="section-label">📷 Product Photo</label>
+          <div class="form-layout-grid">
+            
+            <!-- Left: Product Photo & Camera Capture -->
+            <div class="photo-uploader-box">
+              <div class="uploader-label-row">
+                <label class="field-label">📷 Product Photo</label>
+                <span class="uploader-badge">Auto-Optimized</span>
+              </div>
               
-              <div class="photo-preview-box" id="photoPreviewBox">
-                <img id="productImagePreview" src="" alt="Product Preview" class="photo-preview-img" hidden>
-                <div id="photoPlaceholder" class="photo-placeholder">
-                  <div class="placeholder-icon">📷</div>
-                  <span class="placeholder-title">No Photo Added</span>
-                  <span class="placeholder-hint">Take photo with camera or choose file</span>
+              <div class="photo-frame-preview" id="photoPreviewBox">
+                <img id="productImagePreview" src="" alt="Product Preview" class="photo-img-tag" hidden>
+                <div id="photoPlaceholder" class="photo-empty-state">
+                  <div class="empty-camera-icon">📸</div>
+                  <span class="empty-title">No Photo Added</span>
+                  <span class="empty-desc">Snap with camera or choose image</span>
                 </div>
               </div>
 
-              <!-- Photo Action Controls -->
-              <div class="photo-btn-group">
-                <!-- Native Camera / File Input (Works on phone camera instantly via capture="environment") -->
+              <!-- Action Buttons for Camera -->
+              <div class="photo-controls-stack">
+                <!-- Native camera input with capture="environment" for smartphones -->
                 <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display: none;">
                 
-                <button type="button" id="openMobileCameraBtn" class="btn btn-camera" title="Use Phone Camera or Choose Picture">
-                  <span class="btn-icon-symbol">📸</span> Camera / Gallery
+                <button type="button" id="openMobileCameraBtn" class="btn btn-pill-choy" title="Snap with Phone Camera or Pick from Gallery">
+                  <span class="btn-icon">📸</span> Camera / Gallery
                 </button>
 
-                <button type="button" id="openWebcamBtn" class="btn btn-secondary-teal" title="Open Live Camera Viewfinder (PC / Mobile)">
-                  <span class="btn-icon-symbol">🔴</span> Live Viewfinder
-                </button>
-              </div>
-
-              <div id="photoMetadata" class="photo-metadata" hidden>
-                <span class="meta-badge" id="photoSizeBadge">Optimized: 45 KB</span>
-                <button type="button" id="removePhotoBtn" class="btn-link-danger" title="Remove current photo">
-                  ✕ Remove Photo
+                <button type="button" id="openWebcamBtn" class="btn btn-pill-outline" title="Live Video Camera / Webcam Viewfinder">
+                  <span class="btn-icon">🔴</span> Live Viewfinder
                 </button>
               </div>
 
-              <p class="photo-tip">
-                💡 <em>Photos are automatically compressed to save space in LocalStorage!</em>
-              </p>
+              <div id="photoMetadata" class="photo-meta-bar" hidden>
+                <span class="meta-size-pill" id="photoSizeBadge">Optimized: 45 KB</span>
+                <button type="button" id="removePhotoBtn" class="btn-meta-remove" title="Remove photo">
+                  ✕ Remove
+                </button>
+              </div>
+
+              <div class="photo-hint-text">
+                💡 <em>Photos are automatically compressed to ensure dozens of products fit smoothly in LocalStorage!</em>
+              </div>
             </div>
 
-            <!-- Right: Product Information Inputs Grid -->
-            <div class="product-info-section">
-              <div class="form-grid">
+            <!-- Right: Product Inputs Grid -->
+            <div class="product-fields-container">
+              <div class="fields-grid">
 
-                <div class="form-group full-width">
-                  <label for="productName">Product Name <span class="required">*</span></label>
-                  <input type="text" id="productName" class="form-control" placeholder="e.g. Black Oversized T-Shirt" required>
+                <div class="field-group span-2">
+                  <label for="productName" class="field-label">Product Name <span class="req">*</span></label>
+                  <input type="text" id="productName" class="ui-input" placeholder="e.g. Black Oversized T-Shirt" required>
                 </div>
 
-                <div class="form-group">
-                  <div class="label-with-action">
-                    <label for="productSku">SKU / Product Code <span class="required">*</span></label>
-                    <button type="button" id="generateSkuBtn" class="btn-text-small" title="Generate SKU code automatically">
-                      ⚡ Auto SKU
-                    </button>
+                <div class="field-group">
+                  <div class="field-label-split">
+                    <label for="productSku" class="field-label">SKU / Code <span class="req">*</span></label>
+                    <button type="button" id="generateSkuBtn" class="btn-link-action">⚡ Auto SKU</button>
                   </div>
-                  <input type="text" id="productSku" class="form-control" placeholder="e.g. CA-001" required>
+                  <input type="text" id="productSku" class="ui-input" placeholder="e.g. CA-001" required>
                 </div>
 
-                <div class="form-group">
-                  <label for="productCategory">Category <span class="required">*</span></label>
-                  <input list="categoryDatalist" id="productCategory" class="form-control" placeholder="e.g. T-Shirts" required>
+                <div class="field-group">
+                  <label for="productCategory" class="field-label">Category <span class="req">*</span></label>
+                  <input list="categoryDatalist" id="productCategory" class="ui-input" placeholder="e.g. T-Shirts" required>
                   <datalist id="categoryDatalist">
                     <option value="T-Shirts">
-                    <option value="Apparel &amp; Tops">
-                    <option value="Pants &amp; Bottoms">
+                    <option value="Hoodies &amp; Sweaters">
                     <option value="Caps &amp; Headwear">
+                    <option value="Pants &amp; Bottoms">
                     <option value="Footwear">
                     <option value="Bags &amp; Backpacks">
                     <option value="Accessories">
-                    <option value="Electronics">
-                    <option value="Groceries">
-                    <option value="Stationery">
+                    <option value="Streetwear Outerwear">
                   </datalist>
                 </div>
 
-                <div class="form-group">
-                  <label for="productPrice">Price (₱) <span class="required">*</span></label>
-                  <div class="input-prefix-wrapper">
-                    <span class="input-prefix">₱</span>
-                    <input type="number" id="productPrice" class="form-control with-prefix" min="0" step="0.01" placeholder="449.00" required>
+                <div class="field-group">
+                  <label for="productPrice" class="field-label">Price (₱) <span class="req">*</span></label>
+                  <div class="currency-prefix-wrap">
+                    <span class="curr-symbol">₱</span>
+                    <input type="number" id="productPrice" class="ui-input curr-input" min="0" step="0.01" placeholder="449.00" required>
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="productStock">Stock Quantity <span class="required">*</span></label>
-                  <div class="qty-stepper-wrapper">
-                    <button type="button" class="btn-stepper" id="decStockFormBtn">-</button>
-                    <input type="number" id="productStock" class="form-control stepper-input" min="0" step="1" placeholder="25" value="0" required>
-                    <button type="button" class="btn-stepper" id="incStockFormBtn">+</button>
+                <div class="field-group">
+                  <label for="productStock" class="field-label">Stock Quantity <span class="req">*</span></label>
+                  <div class="stepper-wrap">
+                    <button type="button" class="btn-step" id="decStockFormBtn">-</button>
+                    <input type="number" id="productStock" class="ui-input step-val" min="0" step="1" placeholder="25" value="0" required>
+                    <button type="button" class="btn-step" id="incStockFormBtn">+</button>
                   </div>
                 </div>
 
-                <div class="form-group">
-                  <label for="productMinStock">Low-Stock Alert Level</label>
-                  <input type="number" id="productMinStock" class="form-control" min="0" step="1" value="10" title="Flag as Low Stock when quantity reaches or drops below this number">
+                <div class="field-group">
+                  <label for="productMinStock" class="field-label">Low-Stock Alert Level</label>
+                  <input type="number" id="productMinStock" class="ui-input" min="0" step="1" value="10" title="Alerts as Low Stock when quantity reaches this number">
                 </div>
 
-                <div class="form-group">
-                  <label for="productLocation">Location / Shelf</label>
-                  <input type="text" id="productLocation" class="form-control" placeholder="e.g. Shelf A1">
+                <div class="field-group">
+                  <label for="productLocation" class="field-label">Storage Location / Shelf</label>
+                  <input type="text" id="productLocation" class="ui-input" placeholder="e.g. Shelf A1">
                 </div>
 
-                <div class="form-group full-width">
-                  <label for="productDescription">Description / Notes</label>
-                  <textarea id="productDescription" class="form-control textarea" rows="2" placeholder="e.g. Heavyweight 240gsm cotton relaxed fit tee"></textarea>
+                <div class="field-group span-2">
+                  <label for="productDescription" class="field-label">Description / Material Notes</label>
+                  <textarea id="productDescription" class="ui-textarea" rows="2" placeholder="e.g. Heavyweight 240gsm cotton relaxed fit streetwear tee"></textarea>
                 </div>
 
               </div>
 
-              <!-- Form Buttons -->
-              <div class="form-actions">
-                <button type="submit" id="submitProductBtn" class="btn btn-primary">
+              <!-- Form Submit Actions -->
+              <div class="form-footer-actions">
+                <button type="submit" id="submitProductBtn" class="btn btn-pill-choy-large">
                   ➕ Add Product
                 </button>
-                <button type="button" id="cancelEditBtn" class="btn btn-secondary" hidden>
+                <button type="button" id="cancelEditBtn" class="btn btn-pill-secondary" hidden>
                   Cancel Edit
                 </button>
               </div>
             </div>
+
           </div>
 
         </form>
       </div>
     </section>
 
-    <!-- Inventory Directory & Management Section -->
-    <section class="card" id="inventoryTableCard">
-      <div class="card-header flex-header">
-        <div class="card-header-title">
-          <h2 class="card-title">📦 Product Inventory Directory</h2>
-          <span class="card-subtitle" id="recordCountSubtitle">Showing 0 products</span>
+    <!-- Inventory Records Directory Section -->
+    <section class="ui-card" id="inventoryTableCard">
+      <div class="ui-card-header flex-between">
+        <div class="ui-card-title-group">
+          <h3 class="ui-card-title">📦 Choy Apparel Inventory Directory</h3>
+          <span class="ui-card-subtitle" id="recordCountSubtitle">Showing 0 products</span>
         </div>
-        
-        <!-- Utility Action Buttons -->
-        <div class="toolbar-buttons">
-          <button id="sampleDataBtn" class="btn btn-secondary-teal" title="Load demo products with sample photos">
+
+        <!-- Management Utility Buttons -->
+        <div class="action-buttons-wrap">
+          <button id="sampleDataBtn" class="btn btn-pill-outline" title="Load sample Choy Apparel items">
             ✨ Sample Data
           </button>
-          <button id="exportCsvBtn" class="btn btn-secondary" title="Export product inventory to CSV spreadsheet">
+          <button id="exportCsvBtn" class="btn btn-pill-outline" title="Export inventory to CSV file">
             📥 Export CSV
           </button>
-          <button id="backupJsonBtn" class="btn btn-secondary" title="Backup all inventory & photos to JSON file">
+          <button id="backupJsonBtn" class="btn btn-pill-outline" title="Download JSON full backup">
             💾 Backup
           </button>
-          <button id="restoreJsonBtn" class="btn btn-secondary" title="Restore inventory from JSON backup file">
+          <button id="restoreJsonBtn" class="btn btn-pill-outline" title="Restore inventory from JSON">
             📂 Restore
           </button>
           <input type="file" id="restoreJsonInput" accept=".json" style="display: none;">
-          <button id="clearAllBtn" class="btn btn-danger" title="Clear all saved products">
-            🗑️ Clear All
+          <button id="clearAllBtn" class="btn btn-pill-danger" title="Clear all products">
+            🗑️ Clear
           </button>
         </div>
       </div>
 
-      <div class="card-body">
-        <!-- Filter Toolbar -->
-        <div class="filters-toolbar">
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" class="search-input" placeholder="Search by product name, SKU, category, or location...">
-            <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear search" hidden>&times;</button>
-          </div>
-
-          <div class="filter-controls-group">
-            <div class="filter-control">
-              <label for="filterCategory">Category:</label>
-              <select id="filterCategory" class="form-select">
-                <option value="">All Categories</option>
-              </select>
-            </div>
-
-            <div class="filter-control">
-              <label for="filterStatus">Status:</label>
-              <select id="filterStatus" class="form-select">
-                <option value="">All Statuses</option>
-                <option value="IN_STOCK">🟢 In Stock</option>
-                <option value="LOW_STOCK">🟡 Low Stock</option>
-                <option value="OUT_OF_STOCK">🔴 Out of Stock</option>
-              </select>
-            </div>
-
-            <div class="filter-control">
-              <label for="sortBySelect">Sort by:</label>
-              <select id="sortBySelect" class="form-select">
-                <option value="newest">Newest First</option>
-                <option value="name_asc">Name (A → Z)</option>
-                <option value="sku_asc">SKU (A → Z)</option>
-                <option value="price_asc">Price (Low → High)</option>
-                <option value="price_desc">Price (High → Low)</option>
-                <option value="stock_asc">Stock (Low → High)</option>
-                <option value="stock_desc">Stock (High → Low)</option>
-              </select>
-            </div>
-
-            <!-- View Mode Switcher -->
-            <div class="view-mode-toggle" role="group" aria-label="View Mode">
-              <button type="button" id="viewTableBtn" class="view-btn active" title="Table View">📑 Table</button>
-              <button type="button" id="viewCardsBtn" class="view-btn" title="Grid Cards View">🔲 Cards</button>
-            </div>
-          </div>
-        </div>
-
+      <div class="ui-card-body">
+        
         <!-- Table View -->
-        <div id="tableViewContainer" class="table-responsive">
-          <table id="inventoryTable">
+        <div id="tableViewContainer" class="table-scroll-wrap">
+          <table id="inventoryTable" class="choy-table">
             <thead>
               <tr>
                 <th style="width: 70px;">Photo</th>
@@ -317,27 +420,27 @@
                 <th>Price</th>
                 <th>Stock</th>
                 <th>Location</th>
-                <th>Value</th>
+                <th>Total Value</th>
                 <th>Status</th>
                 <th style="text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="inventoryTableBody">
-              <!-- Dynamically rendered rows -->
+              <!-- Dynamically populated rows -->
             </tbody>
           </table>
         </div>
 
         <!-- Cards View (Grid Mode) -->
-        <div id="cardsViewContainer" class="cards-grid-view" hidden>
-          <!-- Dynamically rendered product cards -->
+        <div id="cardsViewContainer" class="choy-cards-grid" hidden>
+          <!-- Dynamically populated cards -->
         </div>
 
         <!-- Empty State -->
-        <div id="emptyState" class="empty-state" hidden>
-          <div class="empty-state-icon">📦</div>
-          <strong id="emptyStateTitle">No products in inventory yet.</strong>
-          <span id="emptyStateMessage">Add a new product above or click "✨ Sample Data" to get started!</span>
+        <div id="emptyState" class="empty-state-card" hidden>
+          <div class="empty-icon-wrap">👕</div>
+          <strong id="emptyStateTitle" class="empty-lead">No products in inventory yet.</strong>
+          <span id="emptyStateMessage" class="empty-sub">Add a product above or click "✨ Sample Data" to load demo Choy Apparel apparel!</span>
         </div>
 
       </div>
@@ -345,122 +448,140 @@
 
   </main>
 
+  <!-- Floating Mobile App Bottom Dock (Reference UI App Experience) -->
+  <nav class="mobile-bottom-dock" aria-label="Mobile Navigation">
+    <button type="button" class="dock-item" id="dockHomeBtn">
+      <span class="dock-icon">🏠</span>
+      <span class="dock-text">Home</span>
+    </button>
+    <button type="button" class="dock-item" id="dockSearchBtn">
+      <span class="dock-icon">🔍</span>
+      <span class="dock-text">Search</span>
+    </button>
+    <button type="button" class="dock-item dock-action-center" id="dockAddBtn">
+      <span class="dock-icon-plus">➕</span>
+    </button>
+    <button type="button" class="dock-item" id="dockCameraBtn">
+      <span class="dock-icon">📸</span>
+      <span class="dock-text">Camera</span>
+    </button>
+    <button type="button" class="dock-item" id="dockThemeBtn">
+      <span class="dock-icon" id="dockThemeIcon">☀️</span>
+      <span class="dock-text" id="dockThemeText">Light</span>
+    </button>
+  </nav>
+
   <!-- Live Camera Viewfinder Modal -->
-  <div id="cameraModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cameraModalTitle">
-    <div class="modal-dialog modal-camera">
-      <div class="modal-header">
-        <h3 id="cameraModalTitle">📸 Live Camera Capture</h3>
-        <button type="button" id="closeCameraModalBtn" class="modal-close-btn" aria-label="Close">&times;</button>
+  <div id="cameraModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="camModalTitle">
+    <div class="modal-box modal-camera-style">
+      <div class="modal-box-header">
+        <h3 id="camModalTitle">📸 Live Camera Viewfinder</h3>
+        <button type="button" id="closeCameraModalBtn" class="btn-modal-close" aria-label="Close">&times;</button>
       </div>
-      <div class="modal-body modal-camera-body">
-        
-        <div class="camera-stream-container">
-          <video id="cameraVideo" playsinline autoplay muted class="camera-video"></video>
+      <div class="modal-box-body">
+        <div class="viewfinder-viewport">
+          <video id="cameraVideo" playsinline autoplay muted class="viewfinder-video"></video>
           <canvas id="cameraSnapshotCanvas" style="display: none;"></canvas>
-          
-          <!-- Viewfinder Frame Accent -->
-          <div class="viewfinder-frame">
-            <span class="corner tl"></span>
-            <span class="corner tr"></span>
-            <span class="corner bl"></span>
-            <span class="corner br"></span>
+
+          <!-- Streetwear Target Frame Accent -->
+          <div class="target-crosshairs">
+            <span class="corner c-tl"></span>
+            <span class="corner c-tr"></span>
+            <span class="corner c-bl"></span>
+            <span class="corner c-br"></span>
+            <div class="center-cross"></div>
           </div>
 
-          <!-- Captured Photo Review State -->
-          <img id="cameraSnapshotReview" class="camera-snapshot-review" alt="Snapshot Review" hidden>
+          <img id="cameraSnapshotReview" class="snapshot-review-img" alt="Snapshot Review" hidden>
         </div>
 
-        <!-- Camera Controls -->
-        <div class="camera-controls-bar">
-          <div id="liveStreamControls" class="camera-stream-controls">
-            <button type="button" id="switchCameraBtn" class="btn btn-secondary-teal" title="Switch between Front and Rear Camera">
-              🔄 Switch Camera
+        <div class="viewfinder-controls">
+          <div id="liveStreamControls" class="shutter-controls-row">
+            <button type="button" id="switchCameraBtn" class="btn btn-pill-outline" title="Switch Front / Rear Camera">
+              🔄 Switch
             </button>
-            <button type="button" id="snapPhotoBtn" class="btn btn-shutter" title="Take Photo">
-              <span class="shutter-inner"></span>
+            <button type="button" id="snapPhotoBtn" class="btn-shutter-trigger" title="Snap Photo">
+              <span class="shutter-core"></span>
             </button>
-            <span class="shutter-label">Tap to Snap</span>
+            <span class="shutter-hint">Snap Product</span>
           </div>
 
-          <div id="reviewSnapshotControls" class="camera-review-controls" hidden>
-            <button type="button" id="retakeSnapshotBtn" class="btn btn-secondary">
+          <div id="reviewSnapshotControls" class="review-controls-row" hidden>
+            <button type="button" id="retakeSnapshotBtn" class="btn btn-pill-secondary">
               🔄 Retake
             </button>
-            <button type="button" id="acceptSnapshotBtn" class="btn btn-primary">
+            <button type="button" id="acceptSnapshotBtn" class="btn btn-pill-choy">
               ✓ Use This Photo
             </button>
           </div>
         </div>
 
-        <div id="cameraErrorMsg" class="camera-error-banner" hidden>
-          ⚠️ Camera access unavailable. You can use the "Camera / Gallery" button to choose or snap photos via your system camera!
+        <div id="cameraErrorMsg" class="camera-error-box" hidden>
+          ⚠️ Live camera is unavailable or permission denied. You can use the "Camera / Gallery" button to capture directly with your phone!
         </div>
-
       </div>
     </div>
   </div>
 
-  <!-- Photo Lightbox / Zoom Modal -->
-  <div id="lightboxModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal-dialog modal-lightbox">
-      <div class="lightbox-header">
-        <span id="lightboxProductTitle" class="lightbox-title">Product Photo</span>
-        <button type="button" id="closeLightboxBtn" class="modal-close-btn light" aria-label="Close">&times;</button>
+  <!-- Photo Lightbox Modal -->
+  <div id="lightboxModal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-box modal-lightbox-style">
+      <div class="modal-box-header">
+        <span id="lightboxProductTitle" class="lightbox-caption">Product Photo</span>
+        <button type="button" id="closeLightboxBtn" class="btn-modal-close" aria-label="Close">&times;</button>
       </div>
-      <div class="lightbox-body">
-        <img id="lightboxImage" src="" alt="Enlarged product photo" class="lightbox-img">
+      <div class="lightbox-display-area">
+        <img id="lightboxImage" src="" alt="Enlarged photo" class="lightbox-large-img">
       </div>
     </div>
   </div>
 
-  <!-- PWA & Mobile Wi-Fi Install Guide Modal -->
-  <div id="installModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <h2 id="modalTitle">📲 Install App &amp; Mobile Camera Access</h2>
-        <button id="closeModalBtn" class="modal-close-btn" aria-label="Close">&times;</button>
+  <!-- Download & Installation Guidance Modal -->
+  <div id="installModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="modal-box modal-install-style">
+      <div class="modal-box-header">
+        <h2 id="installModalTitle">📲 Download &amp; Install Choy Apparel App</h2>
+        <button id="closeModalBtn" class="btn-modal-close" aria-label="Close">&times;</button>
       </div>
-      <div class="modal-body">
-        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1rem;">
-          This app runs 100% offline with zero backend setup. You can use it on your computer or connect your smartphone on the same Wi-Fi!
+      <div class="modal-box-body">
+        <p class="install-intro">
+          Install Choy Apparel directly onto your phone, tablet, or PC. It operates <strong>100% offline</strong> with zero app store delays!
         </p>
 
-        <div class="install-platform-card">
-          <div class="platform-title">📱 Open &amp; Use on your Phone (Wi-Fi)</div>
-          <ol class="platform-steps">
-            <li>Run <code>Launch-App.bat</code> on your PC.</li>
-            <li>Look at the black console window to see your computer's local Wi-Fi address (e.g., <code>http://192.168.1.X:8080</code>).</li>
-            <li>Open that address in your phone's browser (Chrome, Edge, or Safari).</li>
-            <li>Tap <strong>"📸 Camera / Gallery"</strong> to snap pictures of physical products directly with your phone's camera!</li>
-          </ol>
-        </div>
-
-        <div class="install-platform-card">
-          <div class="platform-title">🤖 Android PWA Installation</div>
-          <ol class="platform-steps">
-            <li>Open this page in <strong>Google Chrome</strong> or <strong>Edge</strong>.</li>
-            <li>Tap the <strong>"📲 Download App"</strong> button above, or open the 3 dots (⋮) menu.</li>
+        <div class="guide-card">
+          <div class="guide-title">🤖 Android (Chrome &amp; Edge)</div>
+          <ol class="guide-list">
+            <li>Tap the <strong>"📲 Download App"</strong> button above, or open the 3-dots menu (⋮).</li>
             <li>Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
-            <li>Launch it like a native app anytime!</li>
+            <li>The Choy Apparel icon will be placed directly onto your home screen!</li>
           </ol>
         </div>
 
-        <div class="install-platform-card">
-          <div class="platform-title">🍏 iPhone &amp; iPad (iOS)</div>
-          <ol class="platform-steps">
+        <div class="guide-card">
+          <div class="guide-title">🍏 iPhone &amp; iPad (Safari)</div>
+          <ol class="guide-list">
             <li>Open this page in <strong>Safari</strong>.</li>
-            <li>Tap the <strong>Share icon</strong> (square with up arrow).</li>
-            <li>Select <strong>"Add to Home Screen"</strong>.</li>
-            <li>Tap <strong>"Add"</strong> in the top right corner.</li>
+            <li>Tap the <strong>Share button</strong> (square with up-arrow at the bottom).</li>
+            <li>Scroll down and tap <strong>"Add to Home Screen"</strong>.</li>
+            <li>Tap <strong>"Add"</strong> in the top-right corner. It runs in its own window without browser bars!</li>
           </ol>
         </div>
 
-        <div class="install-platform-card">
-          <div class="platform-title">💻 Windows PC / Mac</div>
-          <ol class="platform-steps">
+        <div class="guide-card">
+          <div class="guide-title">💻 Windows PC / Mac</div>
+          <ol class="guide-list">
             <li>In <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>:</li>
-            <li>Click the <strong>Install icon (⊕)</strong> on the right side of the address bar.</li>
-            <li>Enjoy full-screen offline inventory tracking!</li>
+            <li>Click the <strong>Install icon (⊕)</strong> on the right side of your address bar.</li>
+            <li>Or double-click <code>Create-Desktop-App-Shortcut.bat</code> in the app folder to generate a 1-click desktop icon!</li>
+          </ol>
+        </div>
+
+        <div class="guide-card">
+          <div class="guide-title">📶 How to Connect Phone over Wi-Fi</div>
+          <ol class="guide-list">
+            <li>Run <code>Launch-App.bat</code> on your PC.</li>
+            <li>Look at the black console window for your computer's local Wi-Fi IP address (e.g., <code>http://192.168.1.X:8080</code>).</li>
+            <li>Open that address on your phone to shoot product photos with your smartphone camera!</li>
           </ol>
         </div>
       </div>

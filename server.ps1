@@ -23,7 +23,7 @@ try {
 
 Clear-Host
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "  INVENTORY MANAGEMENT SYSTEM - LOCAL APP SERVER" -ForegroundColor Green
+Write-Host "  CHOY APPAREL - INVENTORY MANAGEMENT SYSTEM" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "🚀 App running locally on your computer:" -ForegroundColor White
@@ -54,6 +54,8 @@ $mimeTypes = @{
     ".js"   = "application/javascript; charset=utf-8"
     ".json" = "application/json; charset=utf-8"
     ".png"  = "image/png"
+    ".jpg"  = "image/jpeg"
+    ".jpeg" = "image/jpeg"
     ".svg"  = "image/svg+xml"
     ".ico"  = "image/x-icon"
     ".webp" = "image/webp"

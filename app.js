@@ -1,8 +1,10 @@
 // ============================================================
-// StockMaster - Inventory Management & Product Camera System
-// Patterns: Factory Pattern, Singleton Pattern, Strategy Pattern.
-// Features: Live Camera / Mobile Photo Capture, Canvas Optimizer,
-//           LocalStorage Persistence, Offline PWA, Mobile Install
+// CHOY APPAREL — INVENTORY & PRODUCT CAMERA SYSTEM
+// Software Patterns: Factory Pattern, Singleton Database Pattern,
+//                    Strategy Pattern, Observer / State Handling.
+// Features: Light/Dark Theme Switching, Choy Apparel Background,
+//           Live & Mobile Camera Capture, Smart Image Compression,
+//           Offline PWA Persistence, Quick Stock Steppers.
 // ============================================================
 
 // ------------------------------------------------------------
@@ -13,7 +15,7 @@ function ProductFactory(name, sku, category, price, stock, minStock = 10, locati
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
       return crypto.randomUUID();
     }
-    return "prod_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
+    return "choy_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9);
   };
 
   const now = new Date().toISOString();
@@ -35,7 +37,7 @@ function ProductFactory(name, sku, category, price, stock, minStock = 10, locati
 }
 
 // ------------------------------------------------------------
-// 2. STRATEGY PATTERN: Stock Status & Valuation Strategy
+// 2. STRATEGY PATTERN: Stock Strategy & Valuation
 // ------------------------------------------------------------
 const StockStrategy = {
   getStatus(stock, minStock) {
@@ -112,10 +114,8 @@ const ImageOptimizer = {
           canvas.height = height;
           const ctx = canvas.getContext("2d");
 
-          // Draw image
+          // Draw and compress
           ctx.drawImage(img, 0, 0, width, height);
-
-          // Get compressed data URL
           const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
           const sizeKb = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
 
@@ -127,11 +127,11 @@ const ImageOptimizer = {
           });
         };
 
-        img.onerror = () => reject(new Error("Failed to decode image data."));
+        img.onerror = () => reject(new Error("Unable to parse image."));
         img.src = e.target.result;
       };
 
-      reader.onerror = () => reject(new Error("Failed to read image file."));
+      reader.onerror = () => reject(new Error("Unable to read image file."));
       reader.readAsDataURL(fileOrBlob);
     });
   },
@@ -143,9 +143,9 @@ const ImageOptimizer = {
 };
 
 // ------------------------------------------------------------
-// 4. SAMPLE DATA HELPER (SVG Data URIs for realistic demo photos)
+// 4. SAMPLE DATA HELPER (SVG Data URIs for Choy Apparel demos)
 // ------------------------------------------------------------
-function createSampleSvgPhoto(title, color1, color2, iconSvg) {
+function createChoySampleSvgPhoto(title, color1, color2, iconSvg) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
     <defs>
       <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -154,17 +154,18 @@ function createSampleSvgPhoto(title, color1, color2, iconSvg) {
       </linearGradient>
     </defs>
     <rect width="400" height="400" fill="url(#g)"/>
-    <g transform="translate(100, 70)">${iconSvg}</g>
-    <text x="200" y="340" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="20" font-weight="bold" text-anchor="middle">${title}</text>
+    <g transform="translate(100, 60)">${iconSvg}</g>
+    <text x="200" y="325" fill="#ffffff" font-family="-apple-system, sans-serif" font-size="14" font-weight="bold" letter-spacing="3" text-anchor="middle">CHOY APPAREL</text>
+    <text x="200" y="355" fill="#94a3b8" font-family="-apple-system, sans-serif" font-size="18" font-weight="800" text-anchor="middle">${title}</text>
   </svg>`;
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
 // ------------------------------------------------------------
-// 5. SINGLETON PATTERN: Inventory Database
+// 5. SINGLETON DATABASE: Choy Apparel Inventory Database
 // ------------------------------------------------------------
 const InventoryDatabase = (function () {
-  const STORAGE_KEY = "stockmaster_inventory_db_v1";
+  const STORAGE_KEY = "choy_apparel_inventory_v2";
 
   function loadInitial() {
     try {
@@ -173,7 +174,7 @@ const InventoryDatabase = (function () {
         return JSON.parse(raw);
       }
     } catch (err) {
-      console.warn("Unable to load inventory from localStorage:", err);
+      console.warn("Unable to load from LocalStorage:", err);
     }
     return [];
   }
@@ -185,8 +186,8 @@ const InventoryDatabase = (function () {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
       return true;
     } catch (err) {
-      console.error("Unable to persist inventory:", err);
-      alert("⚠️ Storage limit reached! Try removing unused items or taking smaller photos.");
+      console.error("Storage persistence error:", err);
+      alert("⚠️ Storage limit reached! Try taking slightly smaller photos or removing old items.");
       return false;
     }
   }
@@ -239,11 +240,11 @@ const InventoryDatabase = (function () {
   }
 
   function loadSampleData() {
-    // Icons for sample products
-    const shirtIcon = `<path d="M 40 20 L 70 0 L 100 25 L 130 0 L 160 20 L 190 70 L 155 90 L 145 65 L 145 190 L 55 190 L 55 65 L 45 90 L 10 70 Z" fill="#ffffff" opacity="0.9"/>`;
-    const capIcon = `<path d="M 20 120 C 20 50 180 50 180 120 L 220 135 C 210 160 160 160 140 145 L 20 145 Z" fill="#ffffff" opacity="0.9"/>`;
-    const pantsIcon = `<path d="M 50 20 L 150 20 L 140 190 L 105 190 L 100 80 L 95 190 L 60 190 Z" fill="#ffffff" opacity="0.9"/>`;
-    const bagIcon = `<path d="M 60 40 C 60 10 140 10 140 40 L 170 50 L 160 190 L 40 190 L 30 50 Z M 75 40 C 75 25 125 25 125 40 Z" fill="#ffffff" opacity="0.9"/>`;
+    const shirtIcon = `<path d="M 40 20 L 70 0 L 100 25 L 130 0 L 160 20 L 190 70 L 155 90 L 145 65 L 145 190 L 55 190 L 55 65 L 45 90 L 10 70 Z" fill="#ffffff" opacity="0.95"/>`;
+    const hoodieIcon = `<path d="M 35 25 L 75 5 L 100 35 L 125 5 L 165 25 L 195 75 L 160 95 L 150 75 L 150 200 L 50 200 L 50 75 L 40 95 L 5 75 Z" fill="#ffffff" opacity="0.95"/><circle cx="100" cy="50" r="18" fill="none" stroke="#ffffff" stroke-width="4"/>`;
+    const capIcon = `<path d="M 20 120 C 20 50 180 50 180 120 L 220 135 C 210 160 160 160 140 145 L 20 145 Z" fill="#ffffff" opacity="0.95"/>`;
+    const pantsIcon = `<path d="M 50 20 L 150 20 L 140 190 L 105 190 L 100 80 L 95 190 L 60 190 Z" fill="#ffffff" opacity="0.95"/>`;
+    const bagIcon = `<path d="M 60 40 C 60 10 140 10 140 40 L 170 50 L 160 190 L 40 190 L 30 50 Z M 75 40 C 75 25 125 25 125 40 Z" fill="#ffffff" opacity="0.95"/>`;
 
     const sample1 = ProductFactory(
       "Black Oversized T-Shirt",
@@ -253,8 +254,8 @@ const InventoryDatabase = (function () {
       25,
       10,
       "Shelf A1",
-      "Heavyweight 240gsm cotton relaxed fit streetwear tee",
-      createSampleSvgPhoto("Black Tee", "#1e293b", "#0f172a", shirtIcon)
+      "Signature Choy heavyweight 240gsm cotton relaxed fit streetwear tee",
+      createChoySampleSvgPhoto("BLACK OVERSIZED TEE", "#1e293b", "#0f172a", shirtIcon)
     );
 
     const sample2 = ProductFactory(
@@ -265,47 +266,59 @@ const InventoryDatabase = (function () {
       8,
       10,
       "Shelf A1",
-      "Drop-shoulder premium combed cotton daily basic tee",
-      createSampleSvgPhoto("White Tee", "#64748b", "#475569", shirtIcon)
+      "Drop-shoulder premium combed cotton daily basic streetwear tee",
+      createChoySampleSvgPhoto("WHITE OVERSIZED TEE", "#475569", "#334155", shirtIcon)
     );
 
     const sample3 = ProductFactory(
-      "Black Cap",
+      "Black Distressed Cap",
       "CA-003",
       "Caps & Headwear",
       299.00,
       0,
       5,
       "Shelf B2",
-      "Structured 6-panel strapback baseball cap with brass buckle",
-      createSampleSvgPhoto("Black Cap", "#334155", "#1e293b", capIcon)
+      "Structured 6-panel strapback cap with embroidered star lightning monogram",
+      createChoySampleSvgPhoto("BLACK CAP", "#334155", "#0f172a", capIcon)
     );
 
     const sample4 = ProductFactory(
-      "Utility Cargo Pants",
+      "Star-Flash Fleece Hoodie",
       "CA-004",
+      "Hoodies & Sweaters",
+      1199.00,
+      12,
+      6,
+      "Shelf B1",
+      "380gsm French Terry heavyweight boxy hoodie with metal aglets",
+      createChoySampleSvgPhoto("STAR-FLASH HOODIE", "#111827", "#030712", hoodieIcon)
+    );
+
+    const sample5 = ProductFactory(
+      "Tactical Cargo Pants",
+      "CA-005",
       "Pants & Bottoms",
       899.00,
       18,
       5,
       "Shelf C3",
-      "Multi-pocket durable cotton twill streetwear trousers",
-      createSampleSvgPhoto("Cargo Pants", "#0f766e", "#115e59", pantsIcon)
+      "Multi-pocket durable cotton twill streetwear trousers with strap accents",
+      createChoySampleSvgPhoto("CARGO PANTS", "#0f766e", "#115e59", pantsIcon)
     );
 
-    const sample5 = ProductFactory(
-      "Canvas Tote Bag",
-      "CA-005",
+    const sample6 = ProductFactory(
+      "Heavy Canvas Tote Bag",
+      "CA-006",
       "Bags & Backpacks",
       349.00,
       4,
       10,
       "Shelf A2",
-      "Heavy canvas tote bag with reinforced handles & inner pocket",
-      createSampleSvgPhoto("Tote Bag", "#b45309", "#92400e", bagIcon)
+      "16oz heavy raw canvas tote bag with reinforced handles & inner zip pouch",
+      createChoySampleSvgPhoto("CANVAS TOTE", "#b45309", "#78350f", bagIcon)
     );
 
-    products = [sample1, sample2, sample3, sample4, sample5];
+    products = [sample1, sample2, sample3, sample4, sample5, sample6];
     persist();
   }
 
@@ -317,14 +330,13 @@ const InventoryDatabase = (function () {
     try {
       const data = JSON.parse(jsonText);
       if (!Array.isArray(data)) {
-        throw new Error("Invalid backup: data must be an array of products.");
+        throw new Error("Data must be an array of products.");
       }
       products = data;
       persist();
       return true;
     } catch (err) {
-      console.error("Failed to import JSON:", err);
-      alert("Invalid JSON backup file: " + err.message);
+      alert("Invalid backup file: " + err.message);
       return false;
     }
   }
@@ -346,7 +358,45 @@ const InventoryDatabase = (function () {
 // ------------------------------------------------------------
 // 6. DOM REFERENCES
 // ------------------------------------------------------------
-// Form & inputs
+// Theme Switcher
+const themeToggleBtn = document.getElementById("themeToggleBtn");
+const themeLabelText = document.getElementById("themeLabelText");
+const dockThemeBtn = document.getElementById("dockThemeBtn");
+const dockThemeIcon = document.getElementById("dockThemeIcon");
+const dockThemeText = document.getElementById("dockThemeText");
+
+// Hero & Filter Navigation
+const heroAddBtn = document.getElementById("heroAddBtn");
+const heroCameraBtn = document.getElementById("heroCameraBtn");
+const searchInput = document.getElementById("searchInput");
+const clearSearchBtn = document.getElementById("clearSearchBtn");
+const toggleFiltersPanelBtn = document.getElementById("toggleFiltersPanelBtn");
+const advancedFilterPanel = document.getElementById("advancedFilterPanel");
+const categoryChipsContainer = document.getElementById("categoryChipsContainer");
+
+const filterCategory = document.getElementById("filterCategory");
+const filterStatus = document.getElementById("filterStatus");
+const sortBySelect = document.getElementById("sortBySelect");
+const viewTableBtn = document.getElementById("viewTableBtn");
+const viewCardsBtn = document.getElementById("viewCardsBtn");
+
+// Metric Cards & Stock Health
+const statTotalValue = document.getElementById("statTotalValue");
+const statTotalUnitsSub = document.getElementById("statTotalUnitsSub");
+const statTotalProducts = document.getElementById("statTotalProducts");
+const statCategoryCountSub = document.getElementById("statCategoryCountSub");
+const stockHealthCard = document.getElementById("stockHealthCard");
+const meterCirclePath = document.getElementById("meterCirclePath");
+const meterPercentText = document.getElementById("meterPercentText");
+const healthInStockCount = document.getElementById("healthInStockCount");
+const statLowStockCount = document.getElementById("statLowStockCount");
+const statOutOfStockCount = document.getElementById("statOutOfStockCount");
+
+const quickCameraActionCard = document.getElementById("quickCameraActionCard");
+const dashCameraBtn = document.getElementById("dashCameraBtn");
+
+// Form & Inputs
+const productFormCard = document.getElementById("productFormCard");
 const productForm = document.getElementById("productForm");
 const formTitle = document.getElementById("formTitle");
 const formResetBtn = document.getElementById("formResetBtn");
@@ -365,7 +415,7 @@ const productDescriptionInput = document.getElementById("productDescription");
 const decStockFormBtn = document.getElementById("decStockFormBtn");
 const incStockFormBtn = document.getElementById("incStockFormBtn");
 
-// Photo section
+// Photo Elements
 const photoPreviewBox = document.getElementById("photoPreviewBox");
 const productImagePreview = document.getElementById("productImagePreview");
 const photoPlaceholder = document.getElementById("photoPlaceholder");
@@ -376,25 +426,15 @@ const cameraFileInput = document.getElementById("cameraFileInput");
 const openMobileCameraBtn = document.getElementById("openMobileCameraBtn");
 const openWebcamBtn = document.getElementById("openWebcamBtn");
 
-// Stats cards
-const statTotalProducts = document.getElementById("statTotalProducts");
-const statTotalUnits = document.getElementById("statTotalUnits");
-const statTotalValue = document.getElementById("statTotalValue");
-const statLowStockCount = document.getElementById("statLowStockCount");
-const statOutOfStockCount = document.getElementById("statOutOfStockCount");
-const statAlertsCard = document.getElementById("statAlertsCard");
-
-// Toolbar & filters
-const searchInput = document.getElementById("searchInput");
-const clearSearchBtn = document.getElementById("clearSearchBtn");
-const filterCategory = document.getElementById("filterCategory");
-const filterStatus = document.getElementById("filterStatus");
-const sortBySelect = document.getElementById("sortBySelect");
-const viewTableBtn = document.getElementById("viewTableBtn");
-const viewCardsBtn = document.getElementById("viewCardsBtn");
+// Inventory Directory
 const recordCountSubtitle = document.getElementById("recordCountSubtitle");
+const sampleDataBtn = document.getElementById("sampleDataBtn");
+const exportCsvBtn = document.getElementById("exportCsvBtn");
+const backupJsonBtn = document.getElementById("backupJsonBtn");
+const restoreJsonBtn = document.getElementById("restoreJsonBtn");
+const restoreJsonInput = document.getElementById("restoreJsonInput");
+const clearAllBtn = document.getElementById("clearAllBtn");
 
-// Views
 const tableViewContainer = document.getElementById("tableViewContainer");
 const cardsViewContainer = document.getElementById("cardsViewContainer");
 const inventoryTable = document.getElementById("inventoryTable");
@@ -403,15 +443,13 @@ const emptyState = document.getElementById("emptyState");
 const emptyStateTitle = document.getElementById("emptyStateTitle");
 const emptyStateMessage = document.getElementById("emptyStateMessage");
 
-// Utility buttons
-const sampleDataBtn = document.getElementById("sampleDataBtn");
-const exportCsvBtn = document.getElementById("exportCsvBtn");
-const backupJsonBtn = document.getElementById("backupJsonBtn");
-const restoreJsonBtn = document.getElementById("restoreJsonBtn");
-const restoreJsonInput = document.getElementById("restoreJsonInput");
-const clearAllBtn = document.getElementById("clearAllBtn");
+// Mobile Bottom Dock
+const dockHomeBtn = document.getElementById("dockHomeBtn");
+const dockSearchBtn = document.getElementById("dockSearchBtn");
+const dockAddBtn = document.getElementById("dockAddBtn");
+const dockCameraBtn = document.getElementById("dockCameraBtn");
 
-// Camera Viewfinder Modal
+// Camera Modal
 const cameraModal = document.getElementById("cameraModal");
 const closeCameraModalBtn = document.getElementById("closeCameraModalBtn");
 const cameraVideo = document.getElementById("cameraVideo");
@@ -431,24 +469,60 @@ const lightboxImage = document.getElementById("lightboxImage");
 const lightboxProductTitle = document.getElementById("lightboxProductTitle");
 const closeLightboxBtn = document.getElementById("closeLightboxBtn");
 
-// Install & Info Modal
+// Install PWA Modal
 const installAppBtn = document.getElementById("installAppBtn");
 const installHelpBtn = document.getElementById("installHelpBtn");
 const installModal = document.getElementById("installModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const offlineBanner = document.getElementById("offlineBanner");
 
-// State variables
+// Internal State
 let currentPhotoBase64 = "";
 let editingProductId = null;
 let currentViewMode = "table"; // "table" | "cards"
+let activeChipCategory = "";
+let activeChipStatus = "";
 let activeMediaStream = null;
-let currentFacingMode = "environment"; // "environment" (rear) or "user" (front)
+let currentFacingMode = "environment";
 let tempSnapshotDataUrl = "";
 let deferredInstallPrompt = null;
 
 // ------------------------------------------------------------
-// 7. PHOTO PREVIEW & FILE HANDLING
+// 7. THEME SWITCHER (LIGHT VS DARK MODE)
+// ------------------------------------------------------------
+function initTheme() {
+  const savedTheme = localStorage.getItem("choy_theme_mode") || "dark";
+  applyTheme(savedTheme);
+}
+
+function applyTheme(theme) {
+  const isLight = theme === "light";
+  document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
+  document.body.className = isLight ? "theme-light" : "theme-dark";
+
+  if (themeLabelText) {
+    themeLabelText.textContent = isLight ? "Light Mode" : "Dark Mode";
+  }
+
+  if (dockThemeIcon && dockThemeText) {
+    dockThemeIcon.textContent = isLight ? "🌙" : "☀️";
+    dockThemeText.textContent = isLight ? "Dark" : "Light";
+  }
+
+  localStorage.setItem("choy_theme_mode", isLight ? "light" : "dark");
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme(newTheme);
+}
+
+if (themeToggleBtn) themeToggleBtn.addEventListener("click", toggleTheme);
+if (dockThemeBtn) dockThemeBtn.addEventListener("click", toggleTheme);
+
+// ------------------------------------------------------------
+// 8. PHOTO PREVIEW & COMPRESSION
 // ------------------------------------------------------------
 function setProductPhoto(base64Data, sizeKb = null) {
   currentPhotoBase64 = base64Data || "";
@@ -474,7 +548,7 @@ function clearProductPhoto() {
   cameraFileInput.value = "";
 }
 
-// File picker handler (runs on file selection or native mobile camera snap)
+// File picker / Phone camera snap
 cameraFileInput.addEventListener("change", async (e) => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -492,23 +566,21 @@ openMobileCameraBtn.addEventListener("click", () => {
   cameraFileInput.click();
 });
 
-removePhotoBtn.addEventListener("click", () => {
-  clearProductPhoto();
-});
+removePhotoBtn.addEventListener("click", clearProductPhoto);
 
-// Drag and drop photo onto preview box
+// Drag & drop photo zone
 photoPreviewBox.addEventListener("dragover", (e) => {
   e.preventDefault();
-  photoPreviewBox.style.borderColor = "var(--primary)";
+  photoPreviewBox.style.borderColor = "#38bdf8";
 });
 
 photoPreviewBox.addEventListener("dragleave", () => {
-  photoPreviewBox.style.borderColor = "var(--border)";
+  photoPreviewBox.style.borderColor = "";
 });
 
 photoPreviewBox.addEventListener("drop", async (e) => {
   e.preventDefault();
-  photoPreviewBox.style.borderColor = "var(--border)";
+  photoPreviewBox.style.borderColor = "";
   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
     const file = e.dataTransfer.files[0];
     if (file.type.startsWith("image/")) {
@@ -523,7 +595,7 @@ photoPreviewBox.addEventListener("drop", async (e) => {
 });
 
 // ------------------------------------------------------------
-// 8. LIVE CAMERA / WEBCAM CONTROLLER
+// 9. LIVE CAMERA & WEBCAM CONTROLLER
 // ------------------------------------------------------------
 async function startCameraStream() {
   stopCameraStream();
@@ -551,8 +623,7 @@ async function startCameraStream() {
     cameraVideo.srcObject = activeMediaStream;
     await cameraVideo.play();
   } catch (err) {
-    console.warn("Live camera start failed:", err);
-    // Try fallback without facingMode
+    console.warn("Live camera start failed, trying fallback:", err);
     try {
       activeMediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       cameraVideo.srcObject = activeMediaStream;
@@ -595,7 +666,6 @@ switchCameraBtn.addEventListener("click", async () => {
   await startCameraStream();
 });
 
-// Take snapshot from live video stream
 snapPhotoBtn.addEventListener("click", () => {
   if (!cameraVideo.videoWidth) return;
 
@@ -622,7 +692,6 @@ retakeSnapshotBtn.addEventListener("click", () => {
 
 acceptSnapshotBtn.addEventListener("click", async () => {
   if (tempSnapshotDataUrl) {
-    // Compress photo
     try {
       const img = new Image();
       img.onload = () => {
@@ -658,13 +727,13 @@ acceptSnapshotBtn.addEventListener("click", async () => {
 });
 
 // ------------------------------------------------------------
-// 9. FORM HANDLING (Add / Edit / Reset)
+// 10. PRODUCT FORM (ADD, EDIT, RESET)
 // ------------------------------------------------------------
 function resetProductForm() {
   productForm.reset();
   clearProductPhoto();
   editingProductId = null;
-  formTitle.textContent = "➕ Add New Product";
+  formTitle.textContent = "➕ Add Product to Catalog";
   submitProductBtn.textContent = "➕ Add Product";
   cancelEditBtn.hidden = true;
   productStockInput.value = "0";
@@ -674,7 +743,6 @@ function resetProductForm() {
 formResetBtn.addEventListener("click", resetProductForm);
 cancelEditBtn.addEventListener("click", resetProductForm);
 
-// Form Stock +/- steppers
 decStockFormBtn.addEventListener("click", () => {
   const current = parseInt(productStockInput.value, 10) || 0;
   productStockInput.value = Math.max(0, current - 1);
@@ -685,10 +753,9 @@ incStockFormBtn.addEventListener("click", () => {
   productStockInput.value = current + 1;
 });
 
-// Auto-generate SKU
 generateSkuBtn.addEventListener("click", () => {
-  const category = productCategoryInput.value.trim() || "PRD";
-  const prefix = category.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, "") || "PRD";
+  const category = productCategoryInput.value.trim() || "CA";
+  const prefix = category.substring(0, 2).toUpperCase().replace(/[^A-Z]/g, "") || "CA";
   const count = InventoryDatabase.getAll().length + 1;
   const numStr = String(count).padStart(3, "0");
   productSkuInput.value = `${prefix}-${numStr}`;
@@ -698,7 +765,7 @@ productForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const name = productNameInput.value.trim();
-  const sku = productSkuInput.value.trim();
+  const sku = productSkuInput.value.trim().toUpperCase();
   const category = productCategoryInput.value.trim();
   const price = parseFloat(productPriceInput.value);
   const stock = parseInt(productStockInput.value, 10);
@@ -711,16 +778,15 @@ productForm.addEventListener("submit", (e) => {
     return;
   }
 
-  // Check duplicate SKU if adding or changing
-  const existingSku = InventoryDatabase.getAll().find(p => p.sku === sku.toUpperCase() && p.id !== editingProductId);
-  if (existingSku) {
-    if (!confirm(`Warning: SKU "${sku}" is already assigned to "${existingSku.name}". Do you want to proceed?`)) {
+  // Duplicate SKU check
+  const duplicate = InventoryDatabase.getAll().find(p => p.sku === sku && p.id !== editingProductId);
+  if (duplicate) {
+    if (!confirm(`Warning: SKU "${sku}" already exists for "${duplicate.name}". Do you still want to use it?`)) {
       return;
     }
   }
 
   if (editingProductId) {
-    // Update existing
     InventoryDatabase.update(editingProductId, {
       name,
       sku,
@@ -733,7 +799,6 @@ productForm.addEventListener("submit", (e) => {
       image: currentPhotoBase64
     });
   } else {
-    // Add new
     const newProduct = ProductFactory(
       name,
       sku,
@@ -772,15 +837,14 @@ function startEditProduct(id) {
   submitProductBtn.textContent = "💾 Save Changes";
   cancelEditBtn.hidden = false;
 
-  // Scroll smoothly to form
-  productForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function deleteProduct(id) {
   const product = InventoryDatabase.getById(id);
   if (!product) return;
 
-  if (confirm(`Are you sure you want to delete "${product.name}" (SKU: ${product.sku})?`)) {
+  if (confirm(`Delete "${product.name}" (SKU: ${product.sku}) from inventory?`)) {
     InventoryDatabase.remove(id);
     if (editingProductId === id) {
       resetProductForm();
@@ -790,7 +854,7 @@ function deleteProduct(id) {
 }
 
 // ------------------------------------------------------------
-// 10. RENDERING & FILTERING INVENTORY
+// 11. INVENTORY RENDERING & FILTERING
 // ------------------------------------------------------------
 function escapeHtml(str) {
   if (str === null || str === undefined) return "";
@@ -802,53 +866,65 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function updateCategoryFilterOptions() {
+function updateCategoryOptionsAndChips() {
   const products = InventoryDatabase.getAll();
   const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
 
-  const currentSelection = filterCategory.value;
+  // Update select dropdown
+  const currentSelect = filterCategory.value;
   filterCategory.innerHTML = '<option value="">All Categories</option>';
-
   categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat;
     opt.textContent = cat;
-    if (cat === currentSelection) opt.selected = true;
+    if (cat === currentSelect) opt.selected = true;
     filterCategory.appendChild(opt);
   });
+
+  // Re-render horizontal category chips
+  const totalItemsCount = products.length;
+  let chipsHtml = `<button type="button" class="chip-btn ${!activeChipCategory && !activeChipStatus ? "active" : ""}" data-category="">All (${totalItemsCount})</button>`;
+
+  categories.forEach(cat => {
+    const count = products.filter(p => p.category === cat).length;
+    const isActive = activeChipCategory === cat;
+    chipsHtml += `<button type="button" class="chip-btn ${isActive ? "active" : ""}" data-category="${escapeHtml(cat)}">${escapeHtml(cat)} (${count})</button>`;
+  });
+
+  const alertCount = products.filter(p => {
+    const s = StockStrategy.getStatus(p.stock, p.minStock);
+    return s.code === "LOW_STOCK" || s.code === "OUT_OF_STOCK";
+  }).length;
+
+  chipsHtml += `<button type="button" class="chip-btn chip-alert ${activeChipStatus === "ALERT" ? "active" : ""}" data-status="ALERT">⚠️ Alerts (${alertCount})</button>`;
+
+  categoryChipsContainer.innerHTML = chipsHtml;
 }
 
 function getFilteredAndSortedProducts() {
   const searchTerm = searchInput.value.trim().toLowerCase();
-  const selectedCategory = filterCategory.value;
-  const selectedStatus = filterStatus.value;
+  const selectedCategory = activeChipCategory || filterCategory.value;
+  const selectedStatus = activeChipStatus || filterStatus.value;
   const sortBy = sortBySelect.value;
 
   let items = InventoryDatabase.getAll().filter(p => {
-    // Search match
+    // Search
     if (searchTerm) {
-      const searchHaystack = [
-        p.name,
-        p.sku,
-        p.category,
-        p.location,
-        p.description
-      ].join(" ").toLowerCase();
-
-      if (!searchHaystack.includes(searchTerm)) {
-        return false;
-      }
+      const haystack = [p.name, p.sku, p.category, p.location, p.description].join(" ").toLowerCase();
+      if (!haystack.includes(searchTerm)) return false;
     }
 
-    // Category match
+    // Category
     if (selectedCategory && p.category !== selectedCategory) {
       return false;
     }
 
-    // Status match
+    // Status
     if (selectedStatus) {
-      const statusObj = StockStrategy.getStatus(p.stock, p.minStock);
-      if (statusObj.code !== selectedStatus) {
+      const st = StockStrategy.getStatus(p.stock, p.minStock);
+      if (selectedStatus === "ALERT") {
+        if (st.code !== "LOW_STOCK" && st.code !== "OUT_OF_STOCK") return false;
+      } else if (st.code !== selectedStatus) {
         return false;
       }
     }
@@ -856,21 +932,15 @@ function getFilteredAndSortedProducts() {
     return true;
   });
 
-  // Sorting
+  // Sort
   items.sort((a, b) => {
     switch (sortBy) {
-      case "name_asc":
-        return a.name.localeCompare(b.name);
-      case "sku_asc":
-        return a.sku.localeCompare(b.sku);
-      case "price_asc":
-        return a.price - b.price;
-      case "price_desc":
-        return b.price - a.price;
-      case "stock_asc":
-        return a.stock - b.stock;
-      case "stock_desc":
-        return b.stock - a.stock;
+      case "name_asc": return a.name.localeCompare(b.name);
+      case "sku_asc": return a.sku.localeCompare(b.sku);
+      case "price_asc": return a.price - b.price;
+      case "price_desc": return b.price - a.price;
+      case "stock_asc": return a.stock - b.stock;
+      case "stock_desc": return b.stock - a.stock;
       case "newest":
       default:
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
@@ -884,12 +954,11 @@ function renderInventory() {
   const allProducts = InventoryDatabase.getAll();
   const filtered = getFilteredAndSortedProducts();
 
-  updateCategoryFilterOptions();
-  updateStatistics(allProducts);
+  updateCategoryOptionsAndChips();
+  updateDashboardMetrics(allProducts);
 
   recordCountSubtitle.textContent = `Showing ${filtered.length} of ${allProducts.length} product${allProducts.length === 1 ? "" : "s"}`;
 
-  // Clear previous renderings
   inventoryTableBody.innerHTML = "";
   cardsViewContainer.innerHTML = "";
 
@@ -900,10 +969,10 @@ function renderInventory() {
 
     if (allProducts.length === 0) {
       emptyStateTitle.textContent = "No products in inventory yet.";
-      emptyStateMessage.textContent = 'Add your first product above or click "✨ Sample Data" to start!';
+      emptyStateMessage.textContent = 'Add a new product above or click "✨ Sample Data" to load Choy Apparel items!';
     } else {
       emptyStateTitle.textContent = "No matching products found.";
-      emptyStateMessage.textContent = "Try adjusting your search terms or clearing filter dropdowns.";
+      emptyStateMessage.textContent = "Try a different search keyword or tap 'All' on the category bar.";
     }
     return;
   }
@@ -934,8 +1003,8 @@ function renderTableView(items) {
            <img src="${p.image}" alt="${escapeHtml(p.name)}" class="table-thumbnail-img">
            <span class="zoom-overlay">🔍</span>
          </div>`
-      : `<div class="table-thumbnail-wrapper" title="No photo available">
-           <span class="table-thumbnail-placeholder">📦</span>
+      : `<div class="table-thumbnail-wrapper" title="No photo">
+           <span class="table-thumbnail-placeholder">👕</span>
          </div>`;
 
     tr.innerHTML = `
@@ -956,7 +1025,7 @@ function renderTableView(items) {
           <button class="quick-stock-btn" data-action="inc-stock" data-id="${p.id}" title="Add 1">+</button>
         </div>
       </td>
-      <td><span style="font-size: 0.85rem; color: #475569;">${escapeHtml(p.location || "—")}</span></td>
+      <td><span style="font-size: 0.825rem; color: var(--text-muted);">${escapeHtml(p.location || "—")}</span></td>
       <td><strong>${StockStrategy.formatCurrency(itemTotalValue)}</strong></td>
       <td><span class="status-badge ${status.badgeClass}">${status.icon} ${status.label}</span></td>
       <td style="text-align: right;">
@@ -989,7 +1058,7 @@ function renderCardsView(items) {
            <span class="status-badge ${status.badgeClass} card-status-badge-pos">${status.icon} ${status.label}</span>
          </div>`
       : `<div class="card-img-wrapper" title="No photo">
-           <span class="card-img-placeholder">📦</span>
+           <span class="card-img-placeholder">👕</span>
            <span class="status-badge ${status.badgeClass} card-status-badge-pos">${status.icon} ${status.label}</span>
          </div>`;
 
@@ -1006,14 +1075,14 @@ function renderCardsView(items) {
         <div class="card-info-row">
           <span class="card-price">${StockStrategy.formatCurrency(p.price)}</span>
           <div class="stock-stepper-cell">
-            <span style="font-size: 0.775rem; color: #64748b; margin-right: 2px;">Stock:</span>
+            <span style="font-size: 0.775rem; color: var(--text-muted); margin-right: 2px;">Stock:</span>
             <button class="quick-stock-btn" data-action="dec-stock" data-id="${p.id}" title="Subtract 1">-</button>
             <span class="stock-value-cell">${p.stock}</span>
             <button class="quick-stock-btn" data-action="inc-stock" data-id="${p.id}" title="Add 1">+</button>
           </div>
         </div>
         
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #64748b; margin-top: 4px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
           <span>Loc: <strong>${escapeHtml(p.location || "N/A")}</strong></span>
           <span>Val: <strong>${StockStrategy.formatCurrency(itemTotalValue)}</strong></span>
         </div>
@@ -1030,33 +1099,54 @@ function renderCardsView(items) {
   cardsViewContainer.appendChild(fragment);
 }
 
-function updateStatistics(products) {
+function updateDashboardMetrics(products) {
   const totalProducts = products.length;
   let totalUnits = 0;
   let totalValue = 0;
+  let inStockCount = 0;
   let lowCount = 0;
   let outCount = 0;
+
+  const categories = new Set();
 
   products.forEach(p => {
     const qty = p.stock || 0;
     const price = p.price || 0;
     totalUnits += qty;
     totalValue += qty * price;
+    if (p.category) categories.add(p.category);
 
-    const status = StockStrategy.getStatus(qty, p.minStock);
-    if (status.code === "LOW_STOCK") lowCount++;
-    if (status.code === "OUT_OF_STOCK") outCount++;
+    const st = StockStrategy.getStatus(qty, p.minStock);
+    if (st.code === "IN_STOCK") inStockCount++;
+    if (st.code === "LOW_STOCK") lowCount++;
+    if (st.code === "OUT_OF_STOCK") outCount++;
   });
 
-  statTotalProducts.textContent = totalProducts;
-  statTotalUnits.textContent = totalUnits.toLocaleString();
   statTotalValue.textContent = StockStrategy.formatCurrency(totalValue);
-  statLowStockCount.textContent = `${lowCount} Low`;
-  statOutOfStockCount.textContent = `${outCount} Out`;
+  statTotalUnitsSub.textContent = `${totalUnits.toLocaleString()} stock units in shelves`;
+  statTotalProducts.textContent = totalProducts;
+  statCategoryCountSub.textContent = `${categories.size} categories active`;
+
+  healthInStockCount.textContent = inStockCount;
+  statLowStockCount.textContent = lowCount;
+  statOutOfStockCount.textContent = outCount;
+
+  // Circular Meter Percentage
+  const healthyPercent = totalProducts > 0 ? Math.round((inStockCount / totalProducts) * 100) : 100;
+  meterPercentText.textContent = `${healthyPercent}%`;
+  meterCirclePath.setAttribute("stroke-dasharray", `${healthyPercent}, 100`);
+
+  if (healthyPercent < 50) {
+    meterCirclePath.style.stroke = "var(--danger)";
+  } else if (healthyPercent < 80) {
+    meterCirclePath.style.stroke = "var(--warning)";
+  } else {
+    meterCirclePath.style.stroke = "var(--success)";
+  }
 }
 
 // ------------------------------------------------------------
-// 11. EVENT DELEGATION (Actions in Table & Cards)
+// 12. EVENT DELEGATION (TABLE & CARD ACTIONS)
 // ------------------------------------------------------------
 function handleActionClick(e) {
   const target = e.target.closest("[data-action]");
@@ -1087,7 +1177,7 @@ inventoryTableBody.addEventListener("click", handleActionClick);
 cardsViewContainer.addEventListener("click", handleActionClick);
 
 // ------------------------------------------------------------
-// 12. LIGHTBOX / PHOTO ZOOM MODAL
+// 13. LIGHTBOX MODAL
 // ------------------------------------------------------------
 function openLightbox(imageUrl, title = "Product Photo") {
   lightboxImage.src = imageUrl;
@@ -1106,8 +1196,55 @@ lightboxModal.addEventListener("click", (e) => {
 });
 
 // ------------------------------------------------------------
-// 13. VIEW MODES & FILTERS
+// 14. SEARCH, FILTERS & CHIPS
 // ------------------------------------------------------------
+searchInput.addEventListener("input", () => {
+  clearSearchBtn.hidden = !searchInput.value;
+  renderInventory();
+});
+
+clearSearchBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  clearSearchBtn.hidden = true;
+  renderInventory();
+});
+
+toggleFiltersPanelBtn.addEventListener("click", () => {
+  advancedFilterPanel.hidden = !advancedFilterPanel.hidden;
+});
+
+// Click on category chips
+categoryChipsContainer.addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip-btn");
+  if (!chip) return;
+
+  if (chip.dataset.status === "ALERT") {
+    activeChipStatus = activeChipStatus === "ALERT" ? "" : "ALERT";
+    activeChipCategory = "";
+  } else {
+    activeChipCategory = chip.dataset.category || "";
+    activeChipStatus = "";
+  }
+
+  // Sync with dropdowns
+  filterCategory.value = activeChipCategory;
+  filterStatus.value = activeChipStatus;
+
+  renderInventory();
+});
+
+filterCategory.addEventListener("change", () => {
+  activeChipCategory = filterCategory.value;
+  renderInventory();
+});
+
+filterStatus.addEventListener("change", () => {
+  activeChipStatus = filterStatus.value;
+  renderInventory();
+});
+
+sortBySelect.addEventListener("change", renderInventory);
+
 viewTableBtn.addEventListener("click", () => {
   currentViewMode = "table";
   viewTableBtn.classList.add("active");
@@ -1122,39 +1259,63 @@ viewCardsBtn.addEventListener("click", () => {
   renderInventory();
 });
 
-searchInput.addEventListener("input", () => {
-  clearSearchBtn.hidden = !searchInput.value;
+// Click on Stock Health card to toggle stock alert filter
+stockHealthCard.addEventListener("click", () => {
+  activeChipStatus = activeChipStatus === "ALERT" ? "" : "ALERT";
+  activeChipCategory = "";
+  filterStatus.value = activeChipStatus;
   renderInventory();
 });
 
-clearSearchBtn.addEventListener("click", () => {
-  searchInput.value = "";
-  clearSearchBtn.hidden = true;
-  renderInventory();
+// Quick action buttons in Hero and Dashboard
+heroAddBtn.addEventListener("click", () => {
+  resetProductForm();
+  productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  productNameInput.focus();
 });
 
-filterCategory.addEventListener("change", renderInventory);
-filterStatus.addEventListener("change", renderInventory);
-sortBySelect.addEventListener("change", renderInventory);
+heroCameraBtn.addEventListener("click", () => {
+  cameraFileInput.click();
+});
 
-// Quick click on Stock Alerts card to filter alert items
-statAlertsCard.addEventListener("click", () => {
-  if (filterStatus.value === "LOW_STOCK") {
-    filterStatus.value = "OUT_OF_STOCK";
-  } else if (filterStatus.value === "OUT_OF_STOCK") {
-    filterStatus.value = "";
-  } else {
-    filterStatus.value = "LOW_STOCK";
+quickCameraActionCard.addEventListener("click", (e) => {
+  if (e.target !== dashCameraBtn) {
+    cameraFileInput.click();
   }
-  renderInventory();
+});
+
+dashCameraBtn.addEventListener("click", () => {
+  cameraFileInput.click();
 });
 
 // ------------------------------------------------------------
-// 14. DATA UTILITIES: Sample Data, CSV Export, Backup & Restore
+// 15. MOBILE BOTTOM DOCK NAVIGATION
+// ------------------------------------------------------------
+dockHomeBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+dockSearchBtn.addEventListener("click", () => {
+  searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  searchInput.focus();
+});
+
+dockAddBtn.addEventListener("click", () => {
+  resetProductForm();
+  productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  productNameInput.focus();
+});
+
+dockCameraBtn.addEventListener("click", () => {
+  cameraFileInput.click();
+});
+
+// ------------------------------------------------------------
+// 16. DATA EXPORT, BACKUP & RESTORE
 // ------------------------------------------------------------
 sampleDataBtn.addEventListener("click", () => {
   if (InventoryDatabase.getAll().length > 0) {
-    if (!confirm("This will replace current inventory with sample demo products (Black Oversized Tee, White Tee, Black Cap, etc.). Continue?")) {
+    if (!confirm("Load Choy Apparel sample products? This will refresh your demo catalog.")) {
       return;
     }
   }
@@ -1178,13 +1339,13 @@ exportCsvBtn.addEventListener("click", () => {
     "Stock Qty",
     "Min Stock Alert",
     "Location",
-    "Total Inventory Value (PHP)",
+    "Total Value (PHP)",
     "Status",
     "Description"
   ];
 
   const rows = products.map(p => {
-    const status = StockStrategy.getStatus(p.stock, p.minStock);
+    const st = StockStrategy.getStatus(p.stock, p.minStock);
     const itemVal = StockStrategy.calculateItemValue(p.price, p.stock);
 
     return [
@@ -1196,18 +1357,17 @@ exportCsvBtn.addEventListener("click", () => {
       p.minStock,
       `"${(p.location || "").replace(/"/g, '""')}"`,
       itemVal.toFixed(2),
-      `"${status.label}"`,
+      `"${st.label}"`,
       `"${(p.description || "").replace(/"/g, '""')}"`
     ].join(",");
   });
 
-  // Include UTF-8 BOM so Excel displays characters correctly
   const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `inventory_records_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `choy_apparel_inventory_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1220,7 +1380,7 @@ backupJsonBtn.addEventListener("click", () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `inventory_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `choy_apparel_backup_${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1237,7 +1397,7 @@ restoreJsonInput.addEventListener("change", (e) => {
 
   const reader = new FileReader();
   reader.onload = (event) => {
-    if (confirm("Restore inventory from backup? This will overwrite existing items.")) {
+    if (confirm("Restore inventory from backup? This will replace current items.")) {
       const ok = InventoryDatabase.importJson(event.target.result);
       if (ok) {
         resetProductForm();
@@ -1257,7 +1417,7 @@ clearAllBtn.addEventListener("click", () => {
     return;
   }
 
-  if (confirm("⚠️ Are you sure you want to delete ALL inventory items? This cannot be undone.")) {
+  if (confirm("⚠️ Delete ALL products from Choy Apparel inventory? This cannot be undone.")) {
     InventoryDatabase.clear();
     resetProductForm();
     renderInventory();
@@ -1265,7 +1425,7 @@ clearAllBtn.addEventListener("click", () => {
 });
 
 // ------------------------------------------------------------
-// 15. PWA & INSTALLATION LOGIC
+// 17. PWA DOWNLOAD & INSTALLATION
 // ------------------------------------------------------------
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
@@ -1276,7 +1436,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
 });
 
 window.addEventListener("appinstalled", () => {
-  console.log("StockMaster PWA was installed successfully!");
+  console.log("Choy Apparel PWA installed successfully!");
   deferredInstallPrompt = null;
   if (installAppBtn) {
     installAppBtn.style.display = "none";
@@ -1296,7 +1456,7 @@ if (installAppBtn) {
     if (deferredInstallPrompt) {
       deferredInstallPrompt.prompt();
       const choice = await deferredInstallPrompt.userChoice;
-      console.log("Install prompt result:", choice.outcome);
+      console.log("Install prompt choice:", choice.outcome);
       deferredInstallPrompt = null;
     } else {
       openInstallModal();
@@ -1312,7 +1472,7 @@ if (installModal) {
   });
 }
 
-// Online/Offline status
+// Online/Offline detection
 function handleNetworkChange() {
   if (offlineBanner) {
     if (!navigator.onLine) {
@@ -1322,12 +1482,11 @@ function handleNetworkChange() {
     }
   }
 }
-
 window.addEventListener("online", handleNetworkChange);
 window.addEventListener("offline", handleNetworkChange);
 handleNetworkChange();
 
-// Register Service Worker
+// Register Service Worker for offline capability
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
@@ -1338,9 +1497,10 @@ if ("serviceWorker" in navigator) {
 }
 
 // ------------------------------------------------------------
-// 16. INITIAL STARTUP
+// 18. INITIAL STARTUP
 // ------------------------------------------------------------
-// If empty on first launch, load initial sample data so the user has immediate examples
+initTheme();
+
 if (InventoryDatabase.getAll().length === 0) {
   InventoryDatabase.loadSampleData();
 }

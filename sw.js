@@ -1,16 +1,17 @@
-const CACHE_NAME = 'inventory-mgmt-v1';
+const CACHE_NAME = 'choy-apparel-inventory-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.json',
+  './assets/choy-apparel-bg.jpg',
+  './icons/icon.jpg',
   './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon.svg'
+  './icons/icon-512.png'
 ];
 
-// Install: Pre-cache core application shell
+// Install: Cache app shell & Choy Apparel brand assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -19,7 +20,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: Purge stale caches
+// Activate: Purge obsolete caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -43,7 +44,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached resource immediately and refresh cache in background
         fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {

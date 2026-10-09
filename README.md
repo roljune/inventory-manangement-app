@@ -1,79 +1,63 @@
-# 📦 StockMaster - Inventory Management & Product Camera System
+# ⚡ CHOY APPAREL — Inventory Management & Product Camera System
 
-A fast, lightweight, and offline-capable **Inventory Management Web Application** built using the exact same clean, serverless approach as the Student Record App.
+A fast, lightweight, and offline-capable **Streetwear Inventory Management Web Application** designed specifically for **Choy Apparel**.
 
-No MySQL, no XAMPP, and no complex backend configurations required. Everything persists directly and securely to your browser's **LocalStorage**, complete with smart automatic canvas photo compression so you can store dozens of products and pictures without running out of storage.
+Built with the same serverless approach as the Student Record App—no MySQL, no XAMPP, and no complicated backend setup needed. All data and compressed photos persist locally in your device's **LocalStorage**.
 
 ---
 
-## 🌟 Key Features
+## 🌟 What's New in this Version
+
+### 🌓 Light vs. Dark Mode Switch
+* **Toggle Anywhere**: Tap the **☀️ / 🌙** theme toggle in the top-right header or on the floating mobile bottom dock.
+* **Dual Design System**:
+  * **Dark Mode**: Deep matte obsidian and graphite surfaces with the Choy Apparel wallpaper background.
+  * **Light Mode**: Ultra-clean high-fashion silver & crisp white cards with inverted contrast badges.
+* **Instant Persistence**: Your chosen mode is saved in `localStorage` so it stays selected every time you open the app.
+
+### 🖼️ Choy Apparel Artwork Background
+* The official **Choy Apparel** artwork is integrated as a full-bleed textured background with an adaptive translucent overlay that ensures maximum readability for all text, numbers, and product photos.
+
+### 📲 Download App to Device (PWA)
+* **Direct Installation**: Tap the pulsing **"📲 Download App"** button in the header or bottom dock to install Choy Apparel onto your Android device, iPhone/iPad, or Windows PC.
+* **100% Offline**: Includes `manifest.json` and a Service Worker (`sw.js`) that caches all code and Choy Apparel assets for offline work.
+* **Windows Desktop 1-Click Shortcut**: Double-click `Create-Desktop-App-Shortcut.bat` to place a dedicated shortcut right on your Windows desktop.
 
 ### 📷 Product Camera & Photos
-* **On Phone**: Tap **"📸 Camera / Gallery"** — launches your smartphone's rear camera (`capture="environment"`) immediately so you can snap actual products right on your shelf.
-* **On PC / Laptop**: 
-  * Choose existing pictures from your hard drive or phone gallery.
-  * Or click **"🔴 Live Viewfinder"** to open a real-time live webcam viewfinder with a physical shutter button and instant retake / accept controls.
-* **Smart Auto-Compression**: Product photos are automatically resized to max 720px and compressed via HTML5 Canvas (~35KB–65KB), ensuring crisp visuals while saving maximum LocalStorage quota.
-* **Click-to-Zoom Lightbox**: Tap any photo thumbnail in the table or card grid to view the full picture.
+* **Phone Rear Camera**: Tap **"📸 Camera / Gallery"** on your phone to open your smartphone's rear camera directly (`capture="environment"`).
+* **Live Webcam Viewfinder**: Click **"🔴 Live Viewfinder"** on PC or mobile to get a live video viewfinder with snap, retake, and accept controls.
+* **Smart Canvas Compression**: Photos are automatically compressed to ~35KB–65KB to ensure dozens of items fit without exceeding storage limits.
+* **Lightbox Zoom**: Click any photo thumbnail in the table or card grid to view an enlarged version.
 
-### 🏷️ Complete Product Management
-* **Fields**: Product Name, SKU / Product Code, Category, Unit Price (₱ Philippine Peso), Stock Quantity, Low-Stock Alert Threshold, Storage Location / Shelf, and Description.
-* **⚡ Auto SKU Generator**: Click `⚡ Auto SKU` to automatically suggest formatted SKU numbers (e.g. `TS-001`, `CA-005`).
-* **+/- Quick Steppers**: Quickly increase or decrease physical stock count with one click directly in the table or product card.
-* **✏️ Edit & 🗑️ Delete**: Easily edit product details, swap photos, or remove discontinued items.
-
-### ⚠️ Stock Health & Analytics
-* **Automatic Status Tracking**:
-  * 🟢 **In Stock**: Available stock exceeds minimum threshold.
-  * 🟡 **Low Stock**: Stock is less than or equal to alert threshold.
-  * 🔴 **Out of Stock**: Stock count is 0.
-* **Real-time Dashboard Metrics**: Total Products, Total Stock Units, Total Inventory Value (₱), and Low / Out of Stock alerts count.
-* **One-Click Alert Filtering**: Tap the **"Stock Alerts"** dashboard card to instantly isolate items that need urgent restocking.
-
-### 🔍 Search, Filter & View Controls
-* **Live Instant Search**: Filter in real-time across Product Name, SKU, Category, Location, and Description.
-* **Category Filter**: Dynamically populated from your existing inventory.
-* **Status Filter**: View only items in stock, low stock, or out of stock.
-* **Multi-sort**: Sort by Newest, Name (A–Z), SKU (A–Z), Price (Low/High), or Stock (Low/High).
-* **Two View Modes**: Toggle between **📑 Table View** and **🔲 Visual Cards Grid View**.
-
-### 💾 Backup, Export & Offline PWA
-* **100% Offline (PWA)**: Equipped with `manifest.json` and `sw.js` (Service Worker) — works without active internet connectivity.
-* **📥 Export CSV**: Exports inventory to an Excel-friendly CSV spreadsheet with UTF-8 BOM encoding for proper Peso `₱` currency display.
-* **💾 JSON Backup & Restore**: Download a full `.json` backup of your catalog (including compressed photo data) to transfer to another computer or phone.
-* **✨ One-Click Sample Data**: Pre-loaded with realistic products including the exact example requested (*Black Oversized T-Shirt, White Oversized T-Shirt, Black Cap, Cargo Pants, and Canvas Tote Bag*).
+### 🎛️ Reference UI Architecture (Pills, Metrics, & Health Ring)
+* **Pill Chips Bar**: Instant 1-tap filtering for `All Items`, `T-Shirts`, `Hoodies`, `Caps`, `Pants`, `Bags`, and `⚠️ Stock Alerts`.
+* **Stock Health Meter**: Live circular gauge showing your in-stock percentage and alert breakdown.
+* **Inline Quick Steppers**: Increase or decrease stock counts with `+` / `-` buttons directly from the table or card view.
+* **Auto-SKU Generator**: Click `⚡ Auto SKU` to suggest formatted codes (e.g. `CA-001`, `TS-002`).
 
 ---
 
-## 🚀 How to Launch the Application
+## 🚀 How to Run & Download the App
 
-### Option 1: Double-Click Launcher (Recommended)
-1. Navigate to the folder:
+### Option 1: Double-Click Launcher (Windows PC)
+1. Open the folder:
    ```
    C:\Users\monte\.gemini\antigravity\scratch\inventory-management-app
    ```
 2. Double-click **`Launch-App.bat`**.
-3. A local server will start and open `http://localhost:8080` in your default browser.
+3. The local server opens `http://localhost:8080` in your browser.
 
 ---
 
-### Option 2: Open on your Smartphone over Wi-Fi (To test your phone camera!)
-1. Run **`Launch-App.bat`** on your computer.
-2. Note the Wi-Fi IP address shown in the console window (e.g., `http://192.168.1.15:8080`).
-3. Connect your phone to the **same Wi-Fi network**.
-4. Open Chrome, Safari, or Edge on your phone and visit that URL.
-5. Tap **"📸 Camera / Gallery"** to snap pictures of physical products using your phone's camera!
+### Option 2: Use on your Phone (To shoot actual photos with your phone camera!)
+1. Run **`Launch-App.bat`** on your PC.
+2. Note your computer's local Wi-Fi IP address shown in the black console window (e.g., `http://192.168.1.XX:8080`).
+3. Connect your smartphone to the **same Wi-Fi network**.
+4. Open Chrome, Safari, or Edge on your phone and go to that address.
+5. Tap **"📲 Download App"** or tap your browser's menu $\rightarrow$ **"Add to Home Screen"** to install it like a native app!
 
 ---
 
-### Option 3: Direct File Opening
-You can also directly double-click `index.html` to open it in any browser as a `file:///` page. LocalStorage and native file camera capture work out of the box.
-
----
-
-## 🏗️ Software Design Patterns Used
-
-* **Factory Pattern (`ProductFactory`)**: Standardizes the creation and formatting of product objects.
-* **Singleton Pattern (`InventoryDatabase`)**: Manages the single authoritative inventory store and handles serialization to `localStorage`.
-* **Strategy Pattern (`StockStrategy`)**: Encapsulates stock status calculation rules, valuation math, and currency formatting.
-* **Image Optimizer Pipeline (`ImageOptimizer`)**: Handles asynchronous canvas compression and dimensions clamping.
+### Option 3: Create Windows Desktop App Shortcut
+* Double-click **`Create-Desktop-App-Shortcut.bat`**.
+* A shortcut named **"Choy Apparel Inventory"** with the official Choy icon will appear right on your Windows Desktop!

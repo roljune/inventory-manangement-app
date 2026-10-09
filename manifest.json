@@ -1,13 +1,13 @@
 {
-  "name": "Inventory Management & Product Camera",
-  "short_name": "StockMaster",
-  "description": "Offline-ready inventory manager with live product camera photo capture, SKU tracking, stock alerts, and analytics.",
+  "name": "Choy Apparel - Inventory Management & Camera",
+  "short_name": "Choy Apparel",
+  "description": "Official Choy Apparel inventory manager with phone camera capture, SKU tracking, stock alerts, and analytics.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#042f2e",
-  "theme_color": "#0d9488",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -22,9 +22,9 @@
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "icons/icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ]
