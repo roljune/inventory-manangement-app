@@ -674,21 +674,44 @@ body {
   color: var(--text-muted);
 }
 
+.camera-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
 .btn-dash-upload {
   background: var(--btn-choy-bg);
   color: var(--btn-choy-text);
   border: none;
-  padding: 0.5rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: var(--radius-pill);
   font-size: 0.825rem;
   font-weight: 800;
   cursor: pointer;
   transition: var(--transition-smooth);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .btn-dash-upload:hover {
   transform: translateY(-1px);
+}
+
+.btn-dash-upload.btn-dash-gallery {
+  background: var(--surface-muted);
+  color: var(--text-main);
+  border: 1px solid var(--border-input);
+  box-shadow: none;
+}
+
+.btn-dash-upload.btn-dash-gallery:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-gold);
 }
 
 /* Circular Meter Card */
@@ -1929,4 +1952,266 @@ body {
     justify-content: space-around;
     gap: 0;
   }
+}
+
+/* ------------------------------------------------------------
+   15. CLOUD SYNC & ADMIN ACCESS STYLES
+   ------------------------------------------------------------ */
+/* Sync Status Pill */
+.sync-pill {
+  background: var(--surface-input);
+  border: 1px solid var(--border-input);
+  color: var(--text-main);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.sync-pill:hover {
+  background: var(--surface-muted);
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sync-dot.green { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+.sync-dot.yellow { background: var(--warning); animation: pulse-dot 1.2s infinite; }
+.sync-dot.red { background: var(--danger); }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+/* Admin Button Pill */
+.btn-admin-pill {
+  background: var(--surface-input);
+  border: 1px solid var(--border-input);
+  color: var(--text-main);
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.825rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-admin-pill:hover {
+  background: var(--surface-muted);
+  transform: translateY(-1px);
+}
+
+.btn-admin-pill.is-admin {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+  border-color: var(--warning-border);
+  color: var(--warning);
+}
+
+/* Catalog Viewer Banner */
+.viewer-mode-banner {
+  background: var(--surface-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-card);
+  animation: modal-enter 0.3s ease;
+}
+
+.viewer-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.viewer-banner-icon {
+  font-size: 1.5rem;
+}
+
+.viewer-banner-text {
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.viewer-sub {
+  display: block;
+  font-size: 0.775rem;
+  color: var(--text-muted);
+}
+
+.btn-banner-login {
+  background: var(--btn-choy-bg);
+  color: var(--btn-choy-text);
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-smooth);
+}
+
+.btn-banner-login:hover {
+  transform: translateY(-1px);
+}
+
+/* Admin Modal Specifics */
+.modal-admin-style, .modal-qr-style {
+  max-width: 480px;
+}
+
+.admin-modal-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.admin-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.btn-toggle-pw {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.admin-hint-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.admin-hint-text code {
+  background: var(--surface-muted);
+  color: var(--text-main);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.admin-error-banner {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.825rem;
+  margin-bottom: 1rem;
+}
+
+.admin-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.admin-sync-info-box {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.info-row strong {
+  color: var(--text-main);
+}
+
+/* QR Code Phone Link Modal */
+.text-center {
+  text-align: center;
+}
+
+.qr-intro {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.qr-code-display-wrap {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto 1.25rem;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-input);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.qr-code-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-spinner {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0b0c10;
+}
+
+.qr-subtext {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  max-width: 380px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sync-link-copy-box {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.text-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.775rem !important;
 }

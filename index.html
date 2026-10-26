@@ -43,17 +43,24 @@
         </div>
       </div>
 
-      <!-- Controls: Theme Toggle & Download App -->
+      <!-- Controls: Cloud Sync, Admin, & Download App -->
       <div class="header-actions">
-        
-        <!-- Light / Dark Mode Toggle Switch -->
-        <div class="theme-toggle-wrapper" title="Switch Light / Dark Theme">
-          <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Light and Dark Mode">
-            <span class="theme-icon light-icon">☀️</span>
-            <span class="theme-label" id="themeLabelText">Dark Mode</span>
-            <span class="theme-icon dark-icon">🌙</span>
-          </button>
-        </div>
+        <!-- Cloud Sync Status Pill -->
+        <button type="button" id="cloudSyncBtn" class="sync-pill" title="Click to refresh latest inventory from Cloud">
+          <span class="sync-dot green" id="syncStatusDot"></span>
+          <span id="syncStatusText">Cloud Synced</span>
+        </button>
+
+        <!-- Admin Login / Status Button -->
+        <button type="button" id="adminAuthBtn" class="btn-admin-pill" title="Admin Login / Switch Access">
+          <span class="admin-icon">👑</span>
+          <span id="adminBtnLabel">Admin Login</span>
+        </button>
+
+        <!-- Link Phone for Instant Sync (Admin Only) -->
+        <button type="button" id="linkPhoneBtn" class="btn-icon-square" title="Connect Phone for Instant Cloud Sync" hidden>
+          📱
+        </button>
 
         <!-- Download App PWA Button -->
         <button id="installAppBtn" class="btn-download-app" title="Download &amp; Install on Phone or PC">
@@ -72,6 +79,20 @@
 
   <!-- Main App Shell -->
   <main class="main-container">
+
+    <!-- Catalog Viewer Banner (Shown when not logged in as Admin) -->
+    <div id="viewerModeBanner" class="viewer-mode-banner" hidden>
+      <div class="viewer-banner-content">
+        <span class="viewer-banner-icon">👀</span>
+        <div class="viewer-banner-text">
+          <strong>Catalog View Mode</strong> — You are viewing the live Choy Apparel cloud inventory.
+          <span class="viewer-sub">Changes on phone/PC sync in real time when logged in as Admin.</span>
+        </div>
+      </div>
+      <button type="button" id="bannerLoginBtn" class="btn-banner-login">
+        👑 Admin Login
+      </button>
+    </div>
 
     <!-- Hero Greeting & Quick Stats Bar -->
     <section class="hero-section">
@@ -174,17 +195,22 @@
         </div>
       </div>
 
-      <!-- Card 2: Quick Upload / Camera Action Box -->
+      <!-- Card 2: Quick Upload / Camera & Gallery Action Box -->
       <div class="dash-card camera-action-card" id="quickCameraActionCard">
         <div class="camera-card-inner">
           <div class="camera-card-icon">📷</div>
           <div class="camera-card-text">
-            <strong>Snap Product Photo</strong>
-            <span>Use phone camera or upload from files</span>
+            <strong>Add Product Photo</strong>
+            <span>Choose from phone gallery or snap with camera</span>
           </div>
-          <button type="button" id="dashCameraBtn" class="btn-dash-upload">
-            📸 Open Camera
-          </button>
+          <div class="camera-card-actions">
+            <button type="button" id="dashGalleryBtn" class="btn-dash-upload btn-dash-gallery" title="Choose picture from Phone Gallery / Photos">
+              🖼️ Gallery
+            </button>
+            <button type="button" id="dashCameraBtn" class="btn-dash-upload" title="Take a new photo with Phone Camera">
+              📸 Camera
+            </button>
+          </div>
         </div>
       </div>
 
@@ -259,22 +285,29 @@
                 <span class="uploader-badge">Auto-Optimized</span>
               </div>
               
-              <div class="photo-frame-preview" id="photoPreviewBox">
+              <div class="photo-frame-preview" id="photoPreviewBox" role="button" tabindex="0" title="Click to choose a photo from Gallery or Camera">
                 <img id="productImagePreview" src="" alt="Product Preview" class="photo-img-tag" hidden>
                 <div id="photoPlaceholder" class="photo-empty-state">
                   <div class="empty-camera-icon">📸</div>
-                  <span class="empty-title">No Photo Added</span>
-                  <span class="empty-desc">Snap with camera or choose image</span>
+                  <span class="empty-title">Add Product Photo</span>
+                  <span class="empty-desc">Choose from phone gallery or take camera photo</span>
                 </div>
               </div>
 
-              <!-- Action Buttons for Camera -->
+              <!-- Action Buttons for Gallery & Camera -->
               <div class="photo-controls-stack">
-                <!-- Native camera input with capture="environment" for smartphones -->
+                <!-- Phone Gallery Input (No capture attribute -> Opens Photo Library / Gallery on iOS & Android) -->
+                <input type="file" id="galleryFileInput" accept="image/*" style="display: none;">
+
+                <!-- Mobile Camera Input (capture="environment" -> Direct Camera Shutter on mobile) -->
                 <input type="file" id="cameraFileInput" accept="image/*" capture="environment" style="display: none;">
                 
-                <button type="button" id="openMobileCameraBtn" class="btn btn-pill-choy" title="Snap with Phone Camera or Pick from Gallery">
-                  <span class="btn-icon">📸</span> Camera / Gallery
+                <button type="button" id="openGalleryBtn" class="btn btn-pill-choy" title="Choose picture from your Phone Gallery / Photos">
+                  <span class="btn-icon">🖼️</span> Choose from Gallery
+                </button>
+
+                <button type="button" id="openMobileCameraBtn" class="btn btn-pill-outline" title="Take a new photo with Phone Camera">
+                  <span class="btn-icon">📸</span> Take Camera Photo
                 </button>
 
                 <button type="button" id="openWebcamBtn" class="btn btn-pill-outline" title="Live Video Camera / Webcam Viewfinder">
@@ -583,6 +616,94 @@
             <li>Look at the black console window for your computer's local Wi-Fi IP address (e.g., <code>http://192.168.1.X:8080</code>).</li>
             <li>Open that address on your phone to shoot product photos with your smartphone camera!</li>
           </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Authentication Modal -->
+  <div id="adminLoginModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+    <div class="modal-box modal-admin-style">
+      <div class="modal-box-header">
+        <h3 id="adminModalTitle">👑 Choy Apparel Admin Access</h3>
+        <button type="button" id="closeAdminModalBtn" class="btn-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-box-body">
+        <p class="admin-modal-desc">
+          Log in with your Admin credentials to sync live across phone &amp; PC, add products, snap photos, and update stock.
+        </p>
+
+        <form id="adminLoginForm" autocomplete="on">
+          <div class="admin-form-group">
+            <label for="adminUsernameInput" class="field-label">Admin Username</label>
+            <input type="text" id="adminUsernameInput" class="ui-input" placeholder="e.g. roljune or admin" value="roljune" required>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="adminPasswordInput" class="field-label">Admin Password / PIN</label>
+            <div class="password-input-wrap">
+              <input type="password" id="adminPasswordInput" class="ui-input" placeholder="Enter Admin Password or PIN" required>
+              <button type="button" id="togglePasswordVisibilityBtn" class="btn-toggle-pw" title="Toggle visibility">👁️</button>
+            </div>
+            <span class="admin-hint-text">💡 Default Store PIN: <code>choy2026</code></span>
+          </div>
+
+          <div id="adminLoginError" class="admin-error-banner" hidden>
+            ⚠️ Incorrect credentials. Please try again.
+          </div>
+
+          <div class="admin-modal-actions">
+            <button type="submit" id="submitAdminLoginBtn" class="btn btn-pill-choy-large">
+              👑 Login as Admin
+            </button>
+            <button type="button" id="logoutAdminBtn" class="btn btn-pill-danger" hidden>
+              🚪 Logout
+            </button>
+          </div>
+        </form>
+
+        <div class="admin-sync-info-box">
+          <div class="info-row">
+            <span>🌐 Connected Cloud Repo:</span>
+            <strong>roljune/inventory-manangement-app</strong>
+          </div>
+          <div class="info-row">
+            <span>⚡ Sync Status:</span>
+            <span id="adminModalSyncStatus">Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link Phone Instant QR Code Modal -->
+  <div id="linkPhoneModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="linkPhoneTitle">
+    <div class="modal-box modal-qr-style">
+      <div class="modal-box-header">
+        <h3 id="linkPhoneTitle">📱 Instant Phone Link &amp; Sync</h3>
+        <button type="button" id="closeLinkPhoneModalBtn" class="btn-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-box-body text-center">
+        <p class="qr-intro">
+          Scan this QR code with your smartphone camera to <strong>instantly log in as Admin on your phone</strong> and sync live with this computer!
+        </p>
+
+        <!-- QR Code Container -->
+        <div class="qr-code-display-wrap">
+          <img id="qrCodeImage" src="" alt="Phone Link QR Code" class="qr-code-img">
+          <div id="qrLoadingSpinner" class="qr-spinner">Generating QR Code...</div>
+        </div>
+
+        <p class="qr-subtext">
+          No typing required! Your phone automatically logs in, pulls down the latest inventory, and synchronizes both devices.
+        </p>
+
+        <!-- Copyable One-Click Sync Link -->
+        <div class="sync-link-copy-box">
+          <input type="text" id="directSyncLinkInput" readonly class="ui-input text-mono">
+          <button type="button" id="copySyncLinkBtn" class="btn btn-pill-choy">
+            📋 Copy Link
+          </button>
         </div>
       </div>
     </div>

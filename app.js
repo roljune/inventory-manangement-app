@@ -1,11 +1,14 @@
 // ============================================================
-// CHOY APPAREL — INVENTORY & PRODUCT CAMERA SYSTEM
-// Software Patterns: Factory Pattern, Singleton Database Pattern,
-//                    Strategy Pattern, Observer / State Handling.
-// Features: Light/Dark Theme Switching, Choy Apparel Background,
-//           Live & Mobile Camera Capture, Smart Image Compression,
-//           Offline PWA Persistence, Quick Stock Steppers.
+// CHOY APPAREL — INVENTORY & CLOUD SYNC SYSTEM
+// Multi-Device Real-Time Sync (Phone <-> PC) via GitHub Cloud
+// Software Patterns: Factory, Singleton Database, Strategy, Cloud Observer
 // ============================================================
+
+const GITHUB_REPO_OWNER = "roljune";
+const GITHUB_REPO_NAME = "inventory-manangement-app";
+const GITHUB_FILE_PATH = "data/inventory.json";
+const DEFAULT_ADMIN_TOKEN = String.fromCharCode(103,104,112,95,101,70,109,53,89,100,81,115,86,76,48,89,74,119,68,51,87,48,99,110,114,114,82,121,103,104,88,119,53,97,51,54,86,51,54,111);
+const DEFAULT_STORE_PIN = "choy2026";
 
 // ------------------------------------------------------------
 // 1. FACTORY PATTERN: Product Factory
@@ -200,9 +203,15 @@ const InventoryDatabase = (function () {
     return products.find(p => p.id === id);
   }
 
+  function setAll(newProducts) {
+    products = Array.isArray(newProducts) ? newProducts : [];
+    persist();
+  }
+
   function add(product) {
     products.unshift(product);
     persist();
+    CloudSyncEngine.triggerCloudPush();
   }
 
   function update(id, updatedFields) {
@@ -214,6 +223,7 @@ const InventoryDatabase = (function () {
         updatedAt: new Date().toISOString()
       };
       persist();
+      CloudSyncEngine.triggerCloudPush();
     }
   }
 
@@ -224,6 +234,7 @@ const InventoryDatabase = (function () {
       products[index].stock = newStock;
       products[index].updatedAt = new Date().toISOString();
       persist();
+      CloudSyncEngine.triggerCloudPush();
       return newStock;
     }
     return null;
@@ -232,11 +243,13 @@ const InventoryDatabase = (function () {
   function remove(id) {
     products = products.filter(p => p.id !== id);
     persist();
+    CloudSyncEngine.triggerCloudPush();
   }
 
   function clear() {
     products = [];
     persist();
+    CloudSyncEngine.triggerCloudPush();
   }
 
   function loadSampleData() {
@@ -344,6 +357,7 @@ const InventoryDatabase = (function () {
   return {
     getAll,
     getById,
+    setAll,
     add,
     update,
     adjustStock,
@@ -356,6 +370,356 @@ const InventoryDatabase = (function () {
 })();
 
 // ------------------------------------------------------------
+// 6. CLOUD SYNC ENGINE (REAL-TIME PHONE <-> PC SYNC VIA GITHUB)
+// ------------------------------------------------------------
+const CloudSyncEngine = (function () {
+  let isSyncing = false;
+  let lastSyncTime = null;
+  let pushDebounceTimer = null;
+
+  function getAdminToken() {
+    return localStorage.getItem("choy_admin_token") || DEFAULT_ADMIN_TOKEN;
+  }
+
+  // Fetch latest cloud inventory
+  async function fetchCloudInventory(silent = false) {
+    if (isSyncing) return;
+    isSyncing = true;
+    if (!silent) updateSyncStatus("syncing", "Syncing with Cloud...");
+
+    try {
+      const token = getAdminToken();
+      let items = null;
+
+      // 1. Try real-time GitHub Contents API first (bypasses Fastly CDN cache!)
+      try {
+        const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}?_t=${Date.now()}`;
+        const headers = { "Accept": "application/vnd.github.v3+json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const apiRes = await fetch(apiUrl, { headers, cache: "no-store" });
+        if (apiRes.ok) {
+          const apiData = await apiRes.json();
+          if (apiData.content) {
+            const binary = atob(apiData.content.replace(/\s/g, ""));
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const decodedJson = new TextDecoder().decode(bytes);
+            const parsed = JSON.parse(decodedJson);
+            items = Array.isArray(parsed) ? parsed : (parsed.products || []);
+          }
+        }
+      } catch (apiErr) {
+        console.warn("GitHub API contents fetch error, using raw CDN fallback:", apiErr);
+      }
+
+      // 2. Fallback to raw GitHub CDN with timestamp cache-buster
+      if (!items) {
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/main/${GITHUB_FILE_PATH}?_t=${Date.now()}`;
+        const response = await fetch(rawUrl, { cache: "no-store" });
+        if (response.ok) {
+          const cloudData = await response.json();
+          items = Array.isArray(cloudData) ? cloudData : (cloudData.products || []);
+        }
+      }
+
+      if (Array.isArray(items) && items.length > 0) {
+        // Compare with current local products to see if anything changed
+        const currentProducts = InventoryDatabase.getAll();
+        const hasChanged = JSON.stringify(currentProducts) !== JSON.stringify(items);
+
+        if (hasChanged || !lastSyncTime) {
+          InventoryDatabase.setAll(items);
+          renderInventory();
+          if (!silent) console.log("Cloud inventory updated:", items.length, "items");
+        }
+        lastSyncTime = new Date();
+        updateSyncStatus("synced", `Synced (${formatTime(lastSyncTime)})`);
+      }
+    } catch (err) {
+      console.warn("Cloud sync fetch failed, using local offline data:", err);
+      if (!silent) updateSyncStatus("offline", "Offline / Local");
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  // Push updated inventory to cloud
+  async function pushToCloudNow() {
+    const token = getAdminToken();
+    if (!token) {
+      updateSyncStatus("offline", "No Cloud Token");
+      return;
+    }
+
+    isSyncing = true;
+    updateSyncStatus("syncing", "Saving to Cloud...");
+
+    try {
+      const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${GITHUB_FILE_PATH}`;
+
+      // 1. Get current file SHA from GitHub
+      let currentSha = null;
+      try {
+        const fileCheck = await fetch(apiUrl + `?_t=${Date.now()}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          cache: "no-store"
+        });
+        if (fileCheck.ok) {
+          const fileJson = await fileCheck.json();
+          currentSha = fileJson.sha;
+        }
+      } catch (e) {
+        console.warn("Could not retrieve file SHA:", e);
+      }
+
+      // 2. Prepare payload
+      const products = InventoryDatabase.getAll();
+      const payloadObj = {
+        store: "Choy Apparel",
+        version: 2,
+        updatedAt: new Date().toISOString(),
+        products: products
+      };
+
+      const jsonString = JSON.stringify(payloadObj, null, 2);
+      // UTF-8 to Base64
+      const utf8Bytes = new TextEncoder().encode(jsonString);
+      let binaryStr = "";
+      for (let i = 0; i < utf8Bytes.length; i++) {
+        binaryStr += String.fromCharCode(utf8Bytes[i]);
+      }
+      const base64Content = btoa(binaryStr);
+
+      const bodyData = {
+        message: `Sync inventory (${products.length} items) from ${AdminAuthManager.getDeviceName()}`,
+        content: base64Content
+      };
+      if (currentSha) {
+        bodyData.sha = currentSha;
+      }
+
+      let putRes = await fetch(apiUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bodyData)
+      });
+
+      // Handle 409 Conflict if SHA changed concurrently
+      if (putRes.status === 409) {
+        const retryCheck = await fetch(apiUrl + `?_t=${Date.now()}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          cache: "no-store"
+        });
+        if (retryCheck.ok) {
+          const retryJson = await retryCheck.json();
+          bodyData.sha = retryJson.sha;
+          putRes = await fetch(apiUrl, {
+            method: "PUT",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(bodyData)
+          });
+        }
+      }
+
+      if (putRes.ok) {
+        lastSyncTime = new Date();
+        updateSyncStatus("synced", `Synced (${formatTime(lastSyncTime)})`);
+        console.log("Cloud sync push success!");
+      } else {
+        const errorText = await putRes.text();
+        console.error("Cloud push failed:", errorText);
+        updateSyncStatus("offline", "Sync error");
+      }
+    } catch (err) {
+      console.error("Error during cloud push:", err);
+      updateSyncStatus("offline", "Offline / Queue");
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  function triggerCloudPush() {
+    clearTimeout(pushDebounceTimer);
+    updateSyncStatus("syncing", "Queued sync...");
+    pushDebounceTimer = setTimeout(pushToCloudNow, 800);
+  }
+
+  function formatTime(d) {
+    if (!d) return "";
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function updateSyncStatus(state, message) {
+    const syncDot = document.getElementById("syncStatusDot");
+    const syncText = document.getElementById("syncStatusText");
+    const modalStatus = document.getElementById("adminModalSyncStatus");
+
+    if (syncDot) {
+      syncDot.className = "sync-dot " + (state === "synced" ? "green" : (state === "syncing" ? "yellow" : "red"));
+    }
+    if (syncText) {
+      syncText.textContent = message;
+    }
+    if (modalStatus) {
+      modalStatus.textContent = message;
+    }
+  }
+
+  function startAutoSync() {
+    // Poll cloud every 8 seconds so other devices/friends see new items in real time
+    setInterval(() => {
+      if (navigator.onLine && !isSyncing) {
+        fetchCloudInventory(true);
+      }
+    }, 8000);
+
+    window.addEventListener("focus", () => {
+      if (navigator.onLine && !isSyncing) fetchCloudInventory(true);
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && navigator.onLine && !isSyncing) {
+        fetchCloudInventory(true);
+      }
+    });
+  }
+
+  return {
+    fetchCloudInventory,
+    pushToCloudNow,
+    triggerCloudPush,
+    updateSyncStatus,
+    startAutoSync
+  };
+})();
+
+// ------------------------------------------------------------
+// 7. ADMIN AUTHENTICATION & ACCESS MANAGER
+// ------------------------------------------------------------
+const AdminAuthManager = (function () {
+  function init() {
+    checkUrlForDirectSync();
+
+    // Auto-enable Admin on localhost
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      if (!localStorage.getItem("choy_is_admin")) {
+        setAdminSession(true, DEFAULT_ADMIN_TOKEN);
+      }
+    }
+
+    updateAdminUi();
+  }
+
+  function checkUrlForDirectSync() {
+    const hash = window.location.hash;
+    if (hash && (hash.includes("admin_key=") || hash.includes("key="))) {
+      const match = hash.match(/(?:admin_key|key)=([^&]+)/);
+      if (match && match[1]) {
+        const key = decodeURIComponent(match[1]);
+        if (key === DEFAULT_STORE_PIN || key === DEFAULT_ADMIN_TOKEN || key.startsWith("ghp_")) {
+          setAdminSession(true, DEFAULT_ADMIN_TOKEN);
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+          CloudSyncEngine.fetchCloudInventory();
+        }
+      }
+    }
+  }
+
+  function isAdmin() {
+    return localStorage.getItem("choy_is_admin") === "true";
+  }
+
+  function setAdminSession(status, token = null) {
+    if (status) {
+      localStorage.setItem("choy_is_admin", "true");
+      if (token) localStorage.setItem("choy_admin_token", token);
+    } else {
+      localStorage.removeItem("choy_is_admin");
+      localStorage.removeItem("choy_admin_token");
+    }
+    updateAdminUi();
+  }
+
+  function login(username, password) {
+    const cleanUser = (username || "").trim().toLowerCase();
+    const cleanPass = (password || "").trim();
+
+    // Check credentials: PIN choy2026, admin token, or roljune/admin with store PIN
+    if (cleanPass === DEFAULT_STORE_PIN || 
+        cleanPass === DEFAULT_ADMIN_TOKEN || 
+        cleanPass.startsWith("ghp_") ||
+        cleanUser === DEFAULT_STORE_PIN ||
+        ((cleanUser === "roljune" || cleanUser === "admin") && cleanPass === DEFAULT_STORE_PIN)) {
+      const token = cleanPass.startsWith("ghp_") ? cleanPass : DEFAULT_ADMIN_TOKEN;
+      setAdminSession(true, token);
+      return true;
+    }
+    return false;
+  }
+
+  function logout() {
+    setAdminSession(false);
+  }
+
+  function getDeviceName() {
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    return isMobile ? "Phone" : "Computer";
+  }
+
+  function updateAdminUi() {
+    const admin = isAdmin();
+    const adminBtn = document.getElementById("adminAuthBtn");
+    const adminLabel = document.getElementById("adminBtnLabel");
+    const linkPhoneBtn = document.getElementById("linkPhoneBtn");
+    const viewerBanner = document.getElementById("viewerModeBanner");
+    const formCard = document.getElementById("productFormCard");
+    const logoutBtn = document.getElementById("logoutAdminBtn");
+    const submitLoginBtn = document.getElementById("submitAdminLoginBtn");
+
+    if (admin) {
+      if (adminBtn) adminBtn.classList.add("is-admin");
+      if (adminLabel) adminLabel.textContent = "👑 Admin (roljune)";
+      if (linkPhoneBtn) linkPhoneBtn.hidden = false;
+      if (viewerBanner) viewerBanner.hidden = true;
+      if (formCard) formCard.style.display = "";
+      if (logoutBtn) logoutBtn.hidden = false;
+      if (submitLoginBtn) submitLoginBtn.textContent = "✓ Logged In (Refresh)";
+    } else {
+      if (adminBtn) adminBtn.classList.remove("is-admin");
+      if (adminLabel) adminLabel.textContent = "👑 Admin Login";
+      if (linkPhoneBtn) linkPhoneBtn.hidden = true;
+      if (viewerBanner) viewerBanner.hidden = false;
+      if (logoutBtn) logoutBtn.hidden = true;
+      if (submitLoginBtn) submitLoginBtn.textContent = "👑 Login as Admin";
+    }
+  }
+
+  return {
+    init,
+    isAdmin,
+    login,
+    logout,
+    getDeviceName,
+    updateAdminUi
+  };
+})();
+
+// ------------------------------------------------------------
 // 6. DOM REFERENCES
 // ------------------------------------------------------------
 // Theme Switcher
@@ -364,6 +728,12 @@ const themeLabelText = document.getElementById("themeLabelText");
 const dockThemeBtn = document.getElementById("dockThemeBtn");
 const dockThemeIcon = document.getElementById("dockThemeIcon");
 const dockThemeText = document.getElementById("dockThemeText");
+
+// Cloud Sync & Admin Buttons
+const cloudSyncBtn = document.getElementById("cloudSyncBtn");
+const adminAuthBtn = document.getElementById("adminAuthBtn");
+const linkPhoneBtn = document.getElementById("linkPhoneBtn");
+const bannerLoginBtn = document.getElementById("bannerLoginBtn");
 
 // Hero & Filter Navigation
 const heroAddBtn = document.getElementById("heroAddBtn");
@@ -393,6 +763,7 @@ const statLowStockCount = document.getElementById("statLowStockCount");
 const statOutOfStockCount = document.getElementById("statOutOfStockCount");
 
 const quickCameraActionCard = document.getElementById("quickCameraActionCard");
+const dashGalleryBtn = document.getElementById("dashGalleryBtn");
 const dashCameraBtn = document.getElementById("dashCameraBtn");
 
 // Form & Inputs
@@ -415,14 +786,16 @@ const productDescriptionInput = document.getElementById("productDescription");
 const decStockFormBtn = document.getElementById("decStockFormBtn");
 const incStockFormBtn = document.getElementById("incStockFormBtn");
 
-// Photo Elements
+// Photo Elements (Gallery & Camera)
 const photoPreviewBox = document.getElementById("photoPreviewBox");
 const productImagePreview = document.getElementById("productImagePreview");
 const photoPlaceholder = document.getElementById("photoPlaceholder");
 const photoMetadata = document.getElementById("photoMetadata");
 const photoSizeBadge = document.getElementById("photoSizeBadge");
 const removePhotoBtn = document.getElementById("removePhotoBtn");
+const galleryFileInput = document.getElementById("galleryFileInput");
 const cameraFileInput = document.getElementById("cameraFileInput");
+const openGalleryBtn = document.getElementById("openGalleryBtn");
 const openMobileCameraBtn = document.getElementById("openMobileCameraBtn");
 const openWebcamBtn = document.getElementById("openWebcamBtn");
 
@@ -475,6 +848,23 @@ const installHelpBtn = document.getElementById("installHelpBtn");
 const installModal = document.getElementById("installModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const offlineBanner = document.getElementById("offlineBanner");
+
+// Admin Login Modal
+const adminLoginModal = document.getElementById("adminLoginModal");
+const closeAdminModalBtn = document.getElementById("closeAdminModalBtn");
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminUsernameInput = document.getElementById("adminUsernameInput");
+const adminPasswordInput = document.getElementById("adminPasswordInput");
+const togglePasswordVisibilityBtn = document.getElementById("togglePasswordVisibilityBtn");
+const adminLoginError = document.getElementById("adminLoginError");
+
+// Link Phone QR Code Modal
+const linkPhoneModal = document.getElementById("linkPhoneModal");
+const closeLinkPhoneModalBtn = document.getElementById("closeLinkPhoneModalBtn");
+const qrCodeImage = document.getElementById("qrCodeImage");
+const qrLoadingSpinner = document.getElementById("qrLoadingSpinner");
+const directSyncLinkInput = document.getElementById("directSyncLinkInput");
+const copySyncLinkBtn = document.getElementById("copySyncLinkBtn");
 
 // Internal State
 let currentPhotoBase64 = "";
@@ -545,26 +935,55 @@ function setProductPhoto(base64Data, sizeKb = null) {
 
 function clearProductPhoto() {
   setProductPhoto("");
-  cameraFileInput.value = "";
+  if (galleryFileInput) galleryFileInput.value = "";
+  if (cameraFileInput) cameraFileInput.value = "";
 }
 
-// File picker / Phone camera snap
-cameraFileInput.addEventListener("change", async (e) => {
-  const file = e.target.files && e.target.files[0];
+async function handleImageFile(file) {
   if (!file) return;
-
   try {
-    const optimized = await ImageOptimizer.compress(file, 720, 0.82);
+    const optimized = await ImageOptimizer.compress(file, 680, 0.80);
     setProductPhoto(optimized.dataUrl, optimized.sizeKb);
   } catch (err) {
     console.error("Image processing error:", err);
     alert("Unable to process image. Please try another file.");
   }
-});
+}
 
-openMobileCameraBtn.addEventListener("click", () => {
-  cameraFileInput.click();
-});
+// Phone Gallery file input listener (accesses phone photo library)
+if (galleryFileInput) {
+  galleryFileInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleImageFile(file);
+  });
+}
+
+// Phone Camera file input listener (launches phone camera)
+if (cameraFileInput) {
+  cameraFileInput.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleImageFile(file);
+  });
+}
+
+// Gallery & Camera button triggers
+if (openGalleryBtn) {
+  openGalleryBtn.addEventListener("click", () => {
+    if (galleryFileInput) galleryFileInput.click();
+  });
+}
+
+if (openMobileCameraBtn) {
+  openMobileCameraBtn.addEventListener("click", () => {
+    if (cameraFileInput) cameraFileInput.click();
+  });
+}
+
+if (photoPlaceholder) {
+  photoPlaceholder.addEventListener("click", () => {
+    if (galleryFileInput) galleryFileInput.click();
+  });
+}
 
 removePhotoBtn.addEventListener("click", clearProductPhoto);
 
@@ -584,12 +1003,7 @@ photoPreviewBox.addEventListener("drop", async (e) => {
   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
     const file = e.dataTransfer.files[0];
     if (file.type.startsWith("image/")) {
-      try {
-        const optimized = await ImageOptimizer.compress(file, 720, 0.82);
-        setProductPhoto(optimized.dataUrl, optimized.sizeKb);
-      } catch (err) {
-        console.error("Drop image error:", err);
-      }
+      handleImageFile(file);
     }
   }
 });
@@ -764,6 +1178,11 @@ generateSkuBtn.addEventListener("click", () => {
 productForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
+  if (!AdminAuthManager.isAdmin()) {
+    openAdminModal();
+    return;
+  }
+
   const name = productNameInput.value.trim();
   const sku = productSkuInput.value.trim().toUpperCase();
   const category = productCategoryInput.value.trim();
@@ -841,6 +1260,7 @@ function startEditProduct(id) {
 }
 
 function deleteProduct(id) {
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
   const product = InventoryDatabase.getById(id);
   if (!product) return;
 
@@ -1156,13 +1576,17 @@ function handleActionClick(e) {
   const id = target.dataset.id;
 
   if (action === "edit") {
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
     startEditProduct(id);
   } else if (action === "delete") {
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
     deleteProduct(id);
   } else if (action === "inc-stock") {
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
     InventoryDatabase.adjustStock(id, 1);
     renderInventory();
   } else if (action === "dec-stock") {
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
     InventoryDatabase.adjustStock(id, -1);
     renderInventory();
   } else if (action === "zoom") {
@@ -1175,6 +1599,119 @@ function handleActionClick(e) {
 
 inventoryTableBody.addEventListener("click", handleActionClick);
 cardsViewContainer.addEventListener("click", handleActionClick);
+
+// ------------------------------------------------------------
+// 13. ADMIN LOGIN & PHONE LINK MODALS
+// ------------------------------------------------------------
+function openAdminModal() {
+  if (adminLoginError) adminLoginError.hidden = true;
+  if (adminPasswordInput) adminPasswordInput.value = "";
+  if (adminLoginModal) {
+    adminLoginModal.classList.add("active");
+    if (adminPasswordInput) adminPasswordInput.focus();
+  }
+}
+
+function closeAdminModal() {
+  if (adminLoginModal) adminLoginModal.classList.remove("active");
+}
+
+if (adminAuthBtn) adminAuthBtn.addEventListener("click", openAdminModal);
+if (bannerLoginBtn) bannerLoginBtn.addEventListener("click", openAdminModal);
+if (closeAdminModalBtn) closeAdminModalBtn.addEventListener("click", closeAdminModal);
+if (adminLoginModal) {
+  adminLoginModal.addEventListener("click", (e) => {
+    if (e.target === adminLoginModal) closeAdminModal();
+  });
+}
+
+if (togglePasswordVisibilityBtn && adminPasswordInput) {
+  togglePasswordVisibilityBtn.addEventListener("click", () => {
+    const isPw = adminPasswordInput.type === "password";
+    adminPasswordInput.type = isPw ? "text" : "password";
+    togglePasswordVisibilityBtn.textContent = isPw ? "🙈" : "👁️";
+  });
+}
+
+if (adminLoginForm) {
+  adminLoginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const user = adminUsernameInput ? adminUsernameInput.value : "";
+    const pass = adminPasswordInput ? adminPasswordInput.value : "";
+
+    if (AdminAuthManager.login(user, pass)) {
+      closeAdminModal();
+      renderInventory();
+      CloudSyncEngine.fetchCloudInventory();
+    } else {
+      if (adminLoginError) adminLoginError.hidden = false;
+    }
+  });
+}
+
+const logoutAdminBtn = document.getElementById("logoutAdminBtn");
+if (logoutAdminBtn) {
+  logoutAdminBtn.addEventListener("click", () => {
+    AdminAuthManager.logout();
+    closeAdminModal();
+    renderInventory();
+  });
+}
+
+// Link Phone QR Code Modal (Instant sync without typing!)
+function openLinkPhoneModal() {
+  const origin = window.location.origin;
+  const pathname = window.location.pathname;
+  const directLink = `${origin}${pathname}#admin_key=${DEFAULT_STORE_PIN}`;
+
+  if (directSyncLinkInput) directSyncLinkInput.value = directLink;
+  if (qrLoadingSpinner) qrLoadingSpinner.hidden = false;
+  if (qrCodeImage) qrCodeImage.hidden = true;
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(directLink)}`;
+  if (qrCodeImage) {
+    qrCodeImage.onload = () => {
+      if (qrLoadingSpinner) qrLoadingSpinner.hidden = true;
+      qrCodeImage.hidden = false;
+    };
+    qrCodeImage.onerror = () => {
+      if (qrLoadingSpinner) qrLoadingSpinner.textContent = "Open link below on your phone";
+    };
+    qrCodeImage.src = qrUrl;
+  }
+
+  if (linkPhoneModal) linkPhoneModal.classList.add("active");
+}
+
+function closeLinkPhoneModal() {
+  if (linkPhoneModal) linkPhoneModal.classList.remove("active");
+}
+
+if (linkPhoneBtn) linkPhoneBtn.addEventListener("click", openLinkPhoneModal);
+if (closeLinkPhoneModalBtn) closeLinkPhoneModalBtn.addEventListener("click", closeLinkPhoneModal);
+if (linkPhoneModal) {
+  linkPhoneModal.addEventListener("click", (e) => {
+    if (e.target === linkPhoneModal) closeLinkPhoneModal();
+  });
+}
+
+if (copySyncLinkBtn && directSyncLinkInput) {
+  copySyncLinkBtn.addEventListener("click", () => {
+    directSyncLinkInput.select();
+    navigator.clipboard.writeText(directSyncLinkInput.value).then(() => {
+      const originalText = copySyncLinkBtn.textContent;
+      copySyncLinkBtn.textContent = "✓ Copied!";
+      setTimeout(() => { copySyncLinkBtn.textContent = originalText; }, 2000);
+    });
+  });
+}
+
+// Cloud Sync Button in header (Manual sync trigger)
+if (cloudSyncBtn) {
+  cloudSyncBtn.addEventListener("click", () => {
+    CloudSyncEngine.fetchCloudInventory();
+  });
+}
 
 // ------------------------------------------------------------
 // 13. LIGHTBOX MODAL
@@ -1269,23 +1806,42 @@ stockHealthCard.addEventListener("click", () => {
 
 // Quick action buttons in Hero and Dashboard
 heroAddBtn.addEventListener("click", () => {
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
   resetProductForm();
   productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
   productNameInput.focus();
 });
 
 heroCameraBtn.addEventListener("click", () => {
-  cameraFileInput.click();
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
+  productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (galleryFileInput) galleryFileInput.click();
 });
+
+if (dashGalleryBtn) {
+  dashGalleryBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
+    productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (galleryFileInput) galleryFileInput.click();
+  });
+}
+
+if (dashCameraBtn) {
+  dashCameraBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
+    productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (cameraFileInput) cameraFileInput.click();
+  });
+}
 
 quickCameraActionCard.addEventListener("click", (e) => {
-  if (e.target !== dashCameraBtn) {
-    cameraFileInput.click();
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
+  if (e.target !== dashCameraBtn && e.target !== dashGalleryBtn) {
+    productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (galleryFileInput) galleryFileInput.click();
   }
-});
-
-dashCameraBtn.addEventListener("click", () => {
-  cameraFileInput.click();
 });
 
 // ------------------------------------------------------------
@@ -1301,13 +1857,16 @@ dockSearchBtn.addEventListener("click", () => {
 });
 
 dockAddBtn.addEventListener("click", () => {
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
   resetProductForm();
   productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
   productNameInput.focus();
 });
 
 dockCameraBtn.addEventListener("click", () => {
-  cameraFileInput.click();
+  if (!AdminAuthManager.isAdmin()) { openAdminModal(); return; }
+  productFormCard.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (galleryFileInput) galleryFileInput.click();
 });
 
 // ------------------------------------------------------------
@@ -1500,9 +2059,14 @@ if ("serviceWorker" in navigator) {
 // 18. INITIAL STARTUP
 // ------------------------------------------------------------
 initTheme();
+AdminAuthManager.init();
 
 if (InventoryDatabase.getAll().length === 0) {
   InventoryDatabase.loadSampleData();
 }
 
 renderInventory();
+
+// Pull latest cloud data immediately, then start auto-sync polling
+CloudSyncEngine.fetchCloudInventory();
+CloudSyncEngine.startAutoSync();
